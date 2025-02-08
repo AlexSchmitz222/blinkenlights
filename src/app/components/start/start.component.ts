@@ -17,6 +17,7 @@ import { RouterLink } from '@angular/router';
               display: flex;
               justify-content: center;
               align-items: center; 
+              background-color: #000;
             }`
 })
 export class StartComponent {
