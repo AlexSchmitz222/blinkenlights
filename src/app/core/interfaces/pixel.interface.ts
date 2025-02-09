@@ -1,8 +1,11 @@
 export interface Pixel {
-    id: string;
+    id?: string;
     position: {
         x: number;
         y: number
     }
-    active: boolean;
+    active: pixelState;
+    color?: string;
 }
+
+export type pixelState = boolean | 'invert'
