@@ -12,29 +12,34 @@ export class GridService {
 
   initializeGrid(grid: Grid) {
     grid.pixels = [];
+    var count: number = 0;
     for (let gridHeight = 0; gridHeight < grid.size.height; gridHeight++) {
       const row: Pixel[] = [];
       for (let gridWidth = 0; gridWidth < grid.size.width; gridWidth++) {
         row.push({
-          id: gridWidth + '_' + gridHeight,
+          id: count.toString(),
           position: {
             x: gridWidth,
             y: gridHeight
           },
           active: false
         });
+        count++
       }
       grid.pixels.push(row);
     }
-    console.log(grid)
   }
 
   getGridSize(grid: Grid) {
     return { width: grid.size.width, height: grid.size.height }
   }
 
+  getPixelData(grid: Grid, x: number, y: number) {
+    return grid.pixels[y][x];
+  }
+
   checkPixelIsOnGrid(grid: Grid, x: number, y: number) {
     let gridSize = this.getGridSize(grid);
-    return x >= 0 && x < gridSize.width && y >= 0 && y < gridSize.height
+    return x >= 0 && x <= gridSize.width && y >= 0 && y <= gridSize.height
   }
 }
