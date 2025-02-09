@@ -3,9 +3,12 @@ $offColor: #000;
 $onColor: rgb(239, 235, 216);
 
 .container {
-    width: 100%;
-    height: 100%;
-    background-color: #000000;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: #000;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -17,12 +20,15 @@ $onColor: rgb(239, 235, 216);
 }
 
 .pixel {
-    border: 1px solid white;
-    margin: 5px;
-    width: 40px;
-    height: 40px;
+    margin: 0px;
+    width: 30px;
+    height: 30px;
     background-color: magenta;
-    border-radius: 5px;
+    border-radius: 10px;
+    font-size: 8px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 .pixel.off {
@@ -35,4 +41,8 @@ $onColor: rgb(239, 235, 216);
     background-color: $onColor; 
     color: invert($onColor);
     transition: background-color $transitionTime;
+}
+
+.debug {
+    border: 1px solid white;
 }
