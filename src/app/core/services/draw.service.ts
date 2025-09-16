@@ -3,9 +3,9 @@ import { Pixel, pixelState } from '../interfaces/pixel.interface';
 import { GridService } from './grid.service';
 import { Grid } from '../interfaces/grid.interface';
 import { Shape } from '../interfaces/shape.interface';
-import { ShapeOutOfBoundsError } from '../../errors/ShapeOutOfBounds.error';
-import { PixelOutOfBoundsError } from '../../errors/PixelOutOfBounds.error';
-import { ShapePixelOutOfBoundsError } from '../../errors/ShapePixelOutOfBounds.error';
+import { ShapeOutOfBoundsError } from '../errors/ShapeOutOfBounds.error';
+import { PixelOutOfBoundsError } from '../errors/PixelOutOfBounds.error';
+import { ShapePixelOutOfBoundsError } from '../errors/ShapePixelOutOfBounds.error';
 
 @Injectable({
   providedIn: 'root'

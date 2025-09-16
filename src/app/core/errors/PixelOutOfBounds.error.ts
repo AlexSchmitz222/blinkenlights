@@ -1,5 +1,5 @@
-import { Grid } from "../core/interfaces/grid.interface";
-import { Shape } from "../core/interfaces/shape.interface";
+import { Grid } from "../interfaces/grid.interface";
+import { Shape } from "../interfaces/shape.interface";
 
 export class PixelOutOfBoundsError extends Error {
     public gridSize: { width: number, height: number };

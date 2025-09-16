@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Pixel } from '../interfaces/pixel.interface';
 import { Grid } from '../interfaces/grid.interface';
-import { _countGroupLabelsBeforeOption } from '@angular/material/core';
+import { Shape } from '../interfaces/shape.interface';
 
 @Injectable({
   providedIn: 'root'
@@ -9,26 +9,6 @@ import { _countGroupLabelsBeforeOption } from '@angular/material/core';
 export class GridService {
 
   constructor() { }
-
-  initializeGrid(grid: Grid) {
-    grid.pixels = [];
-    var count: number = 0;
-    for (let gridHeight = 0; gridHeight < grid.size.height; gridHeight++) {
-      const row: Pixel[] = [];
-      for (let gridWidth = 0; gridWidth < grid.size.width; gridWidth++) {
-        row.push({
-          id: count.toString(),
-          position: {
-            x: gridWidth,
-            y: gridHeight
-          },
-          active: false
-        });
-        count++
-      }
-      grid.pixels.push(row);
-    }
-  }
 
   getGridSize(grid: Grid) {
     return { width: grid.size.width, height: grid.size.height }
@@ -42,4 +22,36 @@ export class GridService {
     let gridSize = this.getGridSize(grid);
     return x >= 0 && x <= gridSize.width && y >= 0 && y <= gridSize.height
   }
+
+  generateEmptyGrid(gridId: string, size: { width: number, height: number }, gridDescription?: string, inverted?: boolean) {
+    let pixels: Pixel[][] = [];
+    var count: number = 0;
+    for (let gridHeight = 0; gridHeight < size.height; gridHeight++) {
+      const row: Pixel[] = [];
+      for (let gridWidth = 0; gridWidth < size.width; gridWidth++) {
+        row.push({
+          id: count.toString(),
+          position: {
+            x: gridWidth,
+            y: gridHeight
+          },
+          active: false
+        });
+        count++
+      }
+      pixels.push(row);
+    }
+
+    return {
+      id: gridId,
+      description: gridDescription,
+      size: {
+        width: size.width,
+        height: size.height
+      },
+      pixels: pixels,
+      inverted: inverted ? inverted : false
+    }
+  }
 }
+

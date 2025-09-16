@@ -1,6 +1,8 @@
 import { Component } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { RouterLink } from '@angular/router';
+import { StorageService } from '../../core/services/storage.service';
+import { Shapes } from '../../shapes/shapes.shapes';
 @Component({
   selector: 'app-start',
   imports: [
@@ -9,9 +11,14 @@ import { RouterLink } from '@angular/router';
   ],
   template: `<div>
               <button mat-raised-button routerLink="/show">Start!</button>
+              <button mat-raised-button routerLink="/shapes">Shapes</button>
+              <button mat-raised-button (click)="moveToLocalStorage()">Move to Local Storage</button>
             </div>`,
   styles: `
             div {
+              position: absolute;
+              top: 0;
+              left: 0;
               width: 100%;
               height: 100%; 
               display: flex;
@@ -21,5 +28,13 @@ import { RouterLink } from '@angular/router';
             }`
 })
 export class StartComponent {
+  constructor(private storageService: StorageService
+  ) {
 
+
+  }
+  shapes = Shapes;
+  moveToLocalStorage() {
+    this.storageService.storeShapes(this.shapes);
+  }
 }

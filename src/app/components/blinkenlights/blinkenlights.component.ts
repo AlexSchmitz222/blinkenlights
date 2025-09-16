@@ -1,34 +1,28 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DrawService } from '../../core/services/draw.service';
-import { Grid } from '../../core/interfaces/grid.interface';
+import { Grid, emptyGrid } from '../../core/interfaces/grid.interface';
 import { GridService } from '../../core/services/grid.service';
-import { house, heart, star, plusSign, diamond } from '../../core/interfaces/shape.interface'
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 @Component({
   selector: 'app-blinkenlights',
-  imports: [CommonModule],
+  imports: [CommonModule, MatSlideToggleModule],
   templateUrl: './blinkenlights.component.html',
   styleUrl: './blinkenlights.component.scss'
 })
-export class BlinkenlightsComponent {
+export class BlinkenlightsComponent implements OnInit {
 
-  grid: Grid = {
-    id: "grid",
-    size: {
-      width: 39, //aka cols
-      height: 21, //aka rows
-    },
-    backgroundColor: "#000",
-    pixels: [] //^= Pixel[row][col] ^= Pixel[y][x]
-  }
-  debug: boolean = true;
+  grid: Grid = emptyGrid;
+  debug: boolean = false;
+
 
   constructor(private gridService: GridService,
     private drawService: DrawService) { }
 
   ngOnInit() {
-    this.gridService.initializeGrid(this.grid);
-  this.drawService.drawPixel(this.grid, 0, 0, 'invert');
+    this.grid = this.gridService.generateEmptyGrid('', { width: 39, height: 21 });
+    console.log(this.grid);
+    this.drawService.drawPixel(this.grid, 0, 0, 'invert');
     this.drawService.drawPixel(this.grid, this.grid.size.width - 1, 0, 'invert');
     this.drawService.drawPixel(this.grid, 0, this.grid.size.height - 1, 'invert');
     this.drawService.drawPixel(this.grid, this.grid.size.width - 1, this.grid.size.height - 1, 'invert');
@@ -37,7 +31,7 @@ export class BlinkenlightsComponent {
     //this.drawService.drawRectangle(this.grid, 7, 0, 5, 5, true, false);
     //this.drawService.drawRectangle(this.grid, 13, 0, 5, 5, true, true);
 
-    this.drawService.drawShape(this.grid, 0, 0, house);
+    /*this.drawService.drawShape(this.grid, 0, 0, Shapes);
     this.drawService.drawShape(this.grid, 0, this.grid.size.height - house.size.height, house, true);
 
     this.drawService.drawShape(this.grid, house.size.width + 1, 0, heart);
@@ -51,7 +45,7 @@ export class BlinkenlightsComponent {
 
     this.drawService.drawShape(this.grid, house.size.width + 1 + heart.size.width + 1 + star.size.width + 1 + plusSign.size.width + 1, 0, diamond);
     this.drawService.drawShape(this.grid, house.size.width + 1 + heart.size.width + 1 + star.size.width + 1 + plusSign.size.width + 1, this.grid.size.height - diamond.size.height, diamond, true);
-
+*/
   }
 
 }

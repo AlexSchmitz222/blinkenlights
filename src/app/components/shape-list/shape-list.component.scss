@@ -1,0 +1,59 @@
+.container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    background-color: #FFF;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+mat-card {
+    width: 50%;
+    margin: 10px auto 10px auto;
+    background-color: #FFF;
+}
+
+mat-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #666;
+    margin: 8px;
+}
+
+mat-card-content {
+    display: inline-flex;
+    width: 100%;
+    >* {
+        flex: 1;
+    }
+}
+
+mat-card-content div:not(.pixel):not(.pixelRow) {
+    margin: 8px;
+}
+
+
+mat-card-actions {
+    padding: 0px;
+    padding-bottom: 8px;
+    border-top: 1px solid #666;
+    margin: 8px;
+    padding-top: 8px;
+}
+
+mat-card-actions div {
+    background-color: #ccc;
+    height: 30px;
+    border-radius: 15px;
+    width: 100px;
+}
+
+.pixel {
+    border: 1px solid black;
+}

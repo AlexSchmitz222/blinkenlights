@@ -9,3 +9,12 @@ export interface Pixel {
 }
 
 export type pixelState = boolean | 'invert'
+
+export const emptyPixel: Pixel = {
+    position: {
+        x: 0,
+        y: 0
+    },
+    active: false
+}
+
