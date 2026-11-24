@@ -1,12 +1,12 @@
 import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { DrawService } from '../../core/services/draw.service';
 import { Grid, emptyGrid } from '../../core/interfaces/grid.interface';
 import { GridService } from '../../core/services/grid.service';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 @Component({
   selector: 'app-blinkenlights',
-  imports: [CommonModule, MatSlideToggleModule],
+  imports: [MatSlideToggleModule],
   templateUrl: './blinkenlights.component.html',
   styleUrl: './blinkenlights.component.scss'
 })

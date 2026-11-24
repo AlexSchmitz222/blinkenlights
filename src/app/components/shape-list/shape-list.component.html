@@ -1,43 +1,47 @@
 <div class="container">
-    <mat-toolbar>
-        <button mat-stroked-button routerLink="/">back</button>
-        &nbsp;
-        <h2>Shape List</h2>
-        <span class="spacer"></span>
-        <button mat-stroked-button routerLink="/shapes/new">Add New Shape</button>
-    </mat-toolbar>
-    <div class="content">
-        <mat-card appearance="outlined" *ngFor="let shape of shapeList">
-            <mat-card-header>
-                <mat-card-title>{{shape.id}}</mat-card-title>
-                <mat-chip-set>
-                    <mat-chip disableRipple>Size: {{shape.size.width}} x {{shape.size.height}}</mat-chip>
-                </mat-chip-set>
-                <mat-card-title></mat-card-title>
-            </mat-card-header>
-
-            <mat-card-content>
-                <div>
-                    <span><u>Description:</u></span>
-                    <br>
-                    <div>{{shape.description}}</div>
-
-                </div>
-                <div>
-                    <span><u>Shape Pixels:</u></span>
-                    <br>
-                    <div class="shapePreview">
-                        <div class="pixelRow" *ngFor="let row of shape.pixels">
-                            <div class="pixel" *ngFor="let Pixel of row" [class.on]="Pixel.active"
-                                [class.off]="!Pixel.active">
-                            </div>
+  <mat-toolbar>
+    <button mat-stroked-button routerLink="/">back</button>
+    &nbsp;
+    <h2>Shape List</h2>
+    <span class="spacer"></span>
+    <button mat-stroked-button routerLink="/shapes/new">Add New Shape</button>
+  </mat-toolbar>
+  <div class="content">
+    @for (shape of shapeList; track shape) {
+      <mat-card appearance="outlined">
+        <mat-card-header>
+          <mat-card-title>{{shape.id}}</mat-card-title>
+          <mat-chip-set>
+            <mat-chip disableRipple>Size: {{shape.size.width}} x {{shape.size.height}}</mat-chip>
+          </mat-chip-set>
+          <mat-card-title></mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div>
+            <span><u>Description:</u></span>
+            <br>
+              <div>{{shape.description}}</div>
+            </div>
+            <div>
+              <span><u>Shape Pixels:</u></span>
+              <br>
+                <div class="shapePreview">
+                  @for (row of shape.pixels; track row) {
+                    <div class="pixelRow">
+                      @for (Pixel of row; track Pixel) {
+                        <div class="pixel" [class.on]="Pixel.active"
+                          [class.off]="!Pixel.active">
                         </div>
+                      }
                     </div>
+                  }
                 </div>
+              </div>
             </mat-card-content>
             <mat-card-actions align="end">
-                <button mat-stroked-button [routerLink]="['/shapes', shape.id]">Edit</button>
+              <button mat-stroked-button [routerLink]="['/shapes', shape.id]">Edit</button>
             </mat-card-actions>
-        </mat-card>
+          </mat-card>
+        }
+      </div>
     </div>
-</div>

@@ -6,7 +6,7 @@ import { RouterLink } from '@angular/router';
 import { emptyGrid, Grid } from '../../core/interfaces/grid.interface';
 import { ShapeService } from '../../core/services/shape.service';
 import { emptyShape, Shape } from '../../core/interfaces/shape.interface';
-import { CommonModule } from '@angular/common';
+
 import { MatInputModule } from '@angular/material/input';
 import { FormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -20,7 +20,7 @@ import { StorageService } from '../../core/services/storage.service';
 
 @Component({
   selector: 'app-shape-details',
-  imports: [MatToolbarModule, RouterLink, MatButtonModule, CommonModule, MatInputModule, MatFormFieldModule, FormsModule, MatChipsModule, MatSliderModule, MatSlideToggleModule, MatSidenavModule, MatDividerModule],
+  imports: [MatToolbarModule, RouterLink, MatButtonModule, MatInputModule, MatFormFieldModule, FormsModule, MatChipsModule, MatSliderModule, MatSlideToggleModule, MatSidenavModule, MatDividerModule],
   templateUrl: './shape-details.component.html',
   styleUrl: './shape-details.component.scss'
 })

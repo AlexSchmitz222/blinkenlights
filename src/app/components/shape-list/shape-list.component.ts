@@ -3,7 +3,7 @@ import { Shape } from '../../core/interfaces/shape.interface';
 import { MatCardModule } from '@angular/material/card';
 import { MatChipsModule } from '@angular/material/chips';
 import { Shapes } from '../../shapes/shapes.shapes';
-import { CommonModule } from '@angular/common';
+
 import { Pixel } from '../../core/interfaces/pixel.interface';
 import { Grid } from '../../core/interfaces/grid.interface';
 import { MatButtonModule } from '@angular/material/button';
@@ -15,7 +15,7 @@ import { GridService } from '../../core/services/grid.service';
 import { StorageService } from '../../core/services/storage.service';
 @Component({
   selector: 'app-shape-list',
-  imports: [CommonModule, MatCardModule, MatChipsModule, MatButtonModule, RouterLink, MatToolbarModule, MatIconModule],
+  imports: [MatCardModule, MatChipsModule, MatButtonModule, RouterLink, MatToolbarModule, MatIconModule],
   templateUrl: './shape-list.component.html',
   styleUrl: './shape-list.component.scss'
 })

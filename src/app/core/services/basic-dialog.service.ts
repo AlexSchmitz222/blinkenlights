@@ -245,17 +245,19 @@ export class TextareaDialogComponent {
   imports: [MatDialogModule, FormsModule, MatFormFieldModule, ReactiveFormsModule, MatButtonModule, MatInputModule],
   template: `
     <h1 mat-dialog-title>{{ data.title }}</h1>
-
+    
     <mat-dialog-content [formGroup]="inputDialog">
       <mat-form-field appearance="outline" style="width: 100%;">
         <mat-label>Eingabe</mat-label>
         <input matInput [type]="data.type" formControlName="input" class="mat-input-element">
-        <mat-error *ngIf="inputDialog.get('input')?.hasError('required')">
-          Eingabe erforderlich
-        </mat-error>
+        @if (inputDialog.get('input')?.hasError('required')) {
+          <mat-error>
+            Eingabe erforderlich
+          </mat-error>
+        }
       </mat-form-field>
     </mat-dialog-content>
-
+    
     <mat-dialog-actions align="end">
       <button class="no" mat-stroked-button (click)="abort()" tabIndex="0">
         Abbrechen
@@ -264,7 +266,7 @@ export class TextareaDialogComponent {
         Ok
       </button>
     </mat-dialog-actions>
-  `,
+    `,
   styles: [`
     :host {
       display: block;

@@ -1,14 +1,20 @@
 <div class="container">
-    <mat-slide-toggle class="debugControls" labelPosition="before" [checked]="debug" (change)="debug = !debug">
-    </mat-slide-toggle>
-    <div class="pixelRow" *ngFor="let row of grid.pixels">
-        <div class="pixel" *ngFor="let Pixel of row" [class.on]="Pixel.active" [class.off]="!Pixel.active"
-            [class.debug]="debug">
-            <span *ngIf="debug">
-                id:{{Pixel.id}}<br>
-                x:{{Pixel.position.x}}<br>
-                y:{{Pixel.position.y}}
+  <mat-slide-toggle class="debugControls" labelPosition="before" [checked]="debug" (change)="debug = !debug">
+  </mat-slide-toggle>
+  @for (row of grid.pixels; track row) {
+    <div class="pixelRow">
+      @for (Pixel of row; track Pixel) {
+        <div class="pixel" [class.on]="Pixel.active" [class.off]="!Pixel.active"
+          [class.debug]="debug">
+          @if (debug) {
+            <span>
+              id:{{Pixel.id}}<br>
+              x:{{Pixel.position.x}}<br>
+              y:{{Pixel.position.y}}
             </span>
+          }
         </div>
+      }
     </div>
+  }
 </div>

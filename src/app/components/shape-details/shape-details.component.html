@@ -1,64 +1,68 @@
 <div class="container">
-    <mat-toolbar>
-        <button mat-stroked-button routerLink="/shapes">back</button>
-        &nbsp;
-        <h2>Shape Editor</h2>
-        &nbsp;
-        <mat-chip-set>
-            <mat-chip>Id: {{shape.id}}</mat-chip>
-        </mat-chip-set>
-        &nbsp;
-        <span class="spacer"></span>
-        <mat-chip-set>
-            <mat-chip>Description: {{shape.description}}</mat-chip>
-        </mat-chip-set>
-    </mat-toolbar>
-    <mat-sidenav-container>
-        <mat-sidenav disableClose mode="side" opened>
-            <div class="spacer"></div>
-            <span class="controlContainer border">Width:&nbsp;
-                <mat-slider [min]="sliderParams.width.min" [max]="sliderParams.width.max" step="1" showTickMarks
-                    discrete>
-                    <input matSliderThumb [(ngModel)]="shape.size.width" (change)="updateGrid()">
-                </mat-slider>
-                &nbsp;{{shape.size.width}}
-            </span>
-            <span class="controlContainer border">Height:&nbsp;
-                <mat-slider [min]="sliderParams.height.min" [max]="sliderParams.height.max" step="1" showTickMarks
-                    discrete>
-                    <input matSliderThumb [(ngModel)]="shape.size.height" (change)="updateGrid()">
-                </mat-slider>
-                &nbsp;{{shape.size.height}}
-            </span>
-            <span class="controlContainer border pad">
-                <mat-slide-toggle [checked]="invert" (change)="invertShape()" labelPosition="before">Invert
-                </mat-slide-toggle>
-            </span>
-            <mat-divider></mat-divider>
-            <span class="controlContainer">
-                <button mat-stroked-button (click)="clearGrid()">Clear Shape</button>
-            </span>
-            <span class="controlContainer">
-                <button mat-stroked-button (click)="changeShapeName()">Edit Name</button>
-            </span>
-            <span class="controlContainer">
-                <button mat-stroked-button (click)="changeShapeDescription()">Edit Description</button>
-            </span>
-            <span class="controlContainer">
-                <button mat-stroked-button (click)="saveShape()">Save Shape</button>
-            </span>
-        </mat-sidenav>
-        <mat-sidenav-content>
-            <div class="content">
-                <div class="shapePreview">
-                    <div class="pixelRow" *ngFor="let row of grid.pixels">
-                        <div class="pixel" *ngFor="let pixel of row" [class.on]="pixel.active"
-                            [class.off]="!pixel.active" (click)="pixel.active = !pixel.active; updateGrid(true)">
-                        </div>
-                    </div>
+  <mat-toolbar>
+    <button mat-stroked-button routerLink="/shapes">back</button>
+    &nbsp;
+    <h2>Shape Editor</h2>
+    &nbsp;
+    <mat-chip-set>
+      <mat-chip>Id: {{shape.id}}</mat-chip>
+    </mat-chip-set>
+    &nbsp;
+    <span class="spacer"></span>
+    <mat-chip-set>
+      <mat-chip>Description: {{shape.description}}</mat-chip>
+    </mat-chip-set>
+  </mat-toolbar>
+  <mat-sidenav-container>
+    <mat-sidenav disableClose mode="side" opened>
+      <div class="spacer"></div>
+      <span class="controlContainer border">Width:&nbsp;
+        <mat-slider [min]="sliderParams.width.min" [max]="sliderParams.width.max" step="1" showTickMarks
+          discrete>
+          <input matSliderThumb [(ngModel)]="shape.size.width" (change)="updateGrid()">
+        </mat-slider>
+        &nbsp;{{shape.size.width}}
+      </span>
+      <span class="controlContainer border">Height:&nbsp;
+        <mat-slider [min]="sliderParams.height.min" [max]="sliderParams.height.max" step="1" showTickMarks
+          discrete>
+          <input matSliderThumb [(ngModel)]="shape.size.height" (change)="updateGrid()">
+        </mat-slider>
+        &nbsp;{{shape.size.height}}
+      </span>
+      <span class="controlContainer border pad">
+        <mat-slide-toggle [checked]="invert" (change)="invertShape()" labelPosition="before">Invert
+        </mat-slide-toggle>
+      </span>
+      <mat-divider></mat-divider>
+      <span class="controlContainer">
+        <button mat-stroked-button (click)="clearGrid()">Clear Shape</button>
+      </span>
+      <span class="controlContainer">
+        <button mat-stroked-button (click)="changeShapeName()">Edit Name</button>
+      </span>
+      <span class="controlContainer">
+        <button mat-stroked-button (click)="changeShapeDescription()">Edit Description</button>
+      </span>
+      <span class="controlContainer">
+        <button mat-stroked-button (click)="saveShape()">Save Shape</button>
+      </span>
+    </mat-sidenav>
+    <mat-sidenav-content>
+      <div class="content">
+        <div class="shapePreview">
+          @for (row of grid.pixels; track row) {
+            <div class="pixelRow">
+              @for (pixel of row; track pixel) {
+                <div class="pixel" [class.on]="pixel.active"
+                  [class.off]="!pixel.active" (click)="pixel.active = !pixel.active; updateGrid(true)">
                 </div>
+              }
             </div>
-        </mat-sidenav-content>
-    </mat-sidenav-container>
+          }
+        </div>
+      </div>
+    </mat-sidenav-content>
+  </mat-sidenav-container>
 
 </div>
