@@ -1,0 +1,41 @@
+// Card styles are shared and live in src/styles.scss.
+.cards {
+  --card-min: 280px;
+}
+
+.preview {
+  position: relative;
+}
+
+.play-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 150ms;
+  color: #fff;
+
+  mat-icon {
+    width: 48px;
+    height: 48px;
+    padding: 8px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.55);
+  }
+}
+
+.preview:hover .play-overlay,
+.preview:focus-visible .play-overlay {
+  opacity: 1;
+}
+
+.chips {
+  display: flex;
+  gap: 6px;
+}
+
+.stats {
+  font-size: 12px;
+}

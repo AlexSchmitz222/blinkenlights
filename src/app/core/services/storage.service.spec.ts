@@ -36,14 +36,14 @@ describe('StorageService', () => {
     }]));
 
     const storage = create();
-    expect(storage.shapes()).toEqual([{
+    expect(storage.getShape('My Shape')).toEqual({
       id: 'My Shape',
       name: 'My Shape',
       description: 'old',
       size: { width: 1, height: 2 },
       pattern: [{ position: { x: 0, y: 0 }, active: true }],
       inverted: false,
-    }]);
+    });
     expect(localStorage.getItem('shapes')).not.toBeNull(); // legacy data is left alone
   });
 
@@ -83,6 +83,33 @@ describe('StorageService', () => {
     expect(storage.isShapeNameTaken(' alpha ')).toBe(true);
     expect(storage.isShapeNameTaken('Alpha', 'shape_a')).toBe(false);
     expect(storage.isShapeNameTaken('Beta')).toBe(false);
+  });
+
+  it('seeds the demo shows on first start', () => {
+    const storage = create();
+    expect(storage.shows().map(s => s.name)).toEqual(['Welcome', 'Hallo Berlin']);
+    expect(storage.showsUsingShape('heart_filled').map(s => s.name)).toEqual(['Welcome']);
+  });
+
+  it('adds the demo shows (and the shapes they need) to data saved before shows existed', () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ version: 1, shapes: [shape] }));
+    const storage = create();
+    expect(storage.shows().length).toBe(2);
+    expect(storage.getShape('heart_filled')).toBeTruthy();
+    expect(storage.getShape('shape_a')).toBeTruthy();
+  });
+
+  it('does not bring back demo shows the user deleted', () => {
+    const storage = create();
+    storage.deleteShow('show_demo_welcome');
+    expect(create().getShow('show_demo_welcome')).toBeUndefined();
+  });
+
+  it('stamps shows with created/updated times', () => {
+    const storage = create();
+    const saved = storage.saveShow({ id: 'x', name: 'X', description: '', size: { width: 1, height: 1 }, loop: false, scenes: [] });
+    expect(saved.createdAt).toBeTruthy();
+    expect(saved.updatedAt).toBeTruthy();
   });
 
   it('starts fresh when the saved data is corrupt', () => {

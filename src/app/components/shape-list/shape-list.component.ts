@@ -39,7 +39,7 @@ export class ShapeListComponent {
 
   delete(shape: Shape) {
     this.dialogs
-      .showBooleanDialog(`Delete "${shape.name}"?`, 'This cannot be undone.', { confirmLabel: 'Delete' })
+      .showBooleanDialog(`Delete "${shape.name}"?`, this.storage.describeShapeDeletion(shape.id), { confirmLabel: 'Delete' })
       .subscribe(ok => {
         if (!ok) return;
         this.storage.deleteShape(shape.id);

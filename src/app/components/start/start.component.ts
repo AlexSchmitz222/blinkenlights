@@ -15,7 +15,7 @@ import { RouterLink } from '@angular/router';
         build little light shows out of pixels, frames and scenes, and play them back on a virtual house front.
       </p>
       <div class="actions">
-        <a matButton="filled" routerLink="/show"><mat-icon svgIcon="play" />Player</a>
+        <a matButton="filled" routerLink="/shows"><mat-icon svgIcon="movie-open-outline" />Shows</a>
         <a matButton="outlined" routerLink="/shapes"><mat-icon svgIcon="shape-outline" />Shapes</a>
       </div>
     </section>

@@ -1,0 +1,124 @@
+// The player is always dark, like the real house front at night.
+:host {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  background: #000;
+  color: #d8d6d0;
+  color-scheme: dark;
+}
+
+:host(.idle) {
+  cursor: none;
+
+  .controls {
+    opacity: 0;
+    transform: translateY(8px);
+    pointer-events: none;
+  }
+}
+
+.stage-wrap {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  padding: 24px;
+  cursor: pointer;
+}
+
+.stage {
+  flex: 1;
+}
+
+.stage:not(.facade) {
+  border: none;
+  background: transparent;
+  --bl-stage-pad: 0px;
+}
+
+.stage.facade {
+  --bl-stage-pad: 32px;
+  border-radius: 2px;
+}
+
+.controls {
+  position: relative;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.6));
+  transition: opacity 250ms, transform 250ms;
+}
+
+.scrubber {
+  padding: 0 16px;
+
+  input {
+    width: 100%;
+    height: 4px;
+    margin: 0;
+    accent-color: var(--bl-light-on);
+    cursor: pointer;
+  }
+}
+
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 12px 10px;
+
+  .play mat-icon {
+    width: 28px;
+    height: 28px;
+  }
+
+  .active {
+    color: var(--bl-light-on);
+  }
+}
+
+.info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  margin-left: 12px;
+  line-height: 1.3;
+
+  .title {
+    font-weight: 500;
+    color: #f1efe9;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .sub {
+    font-size: 12px;
+    color: #8d8b86;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+.preset {
+  font-size: 12px;
+  color: #8d8b86;
+  margin-right: 8px;
+}
+
+.missing {
+  margin: auto;
+  text-align: center;
+  color: #8d8b86;
+}
+
+@media (max-width: 640px) {
+  .preset,
+  .info .sub {
+    display: none;
+  }
+
+  .stage-wrap {
+    padding: 8px;
+  }
+}

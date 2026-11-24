@@ -1,0 +1,68 @@
+@if (show(); as show) {
+  <div class="stage-wrap" (click)="player.toggle()" (dblclick)="toggleFullscreen()">
+    @if (grid(); as grid) {
+      <app-pixel-grid class="stage" [grid]="grid" fit="contain" [variant]="viewMode()" [debug]="debug()" />
+    }
+  </div>
+
+  <div class="controls" (click)="$event.stopPropagation()">
+    <div class="scrubber">
+      <input
+        type="range"
+        min="0"
+        [max]="Math.max(0, player.frameCount() - 1)"
+        [value]="player.position()"
+        (input)="player.seek(+$any($event.target).value)"
+        aria-label="Position" />
+    </div>
+
+    <div class="bar">
+      <a matIconButton routerLink="/shows" matTooltip="Back to shows" aria-label="Back to shows">
+        <mat-icon svgIcon="arrow-left" />
+      </a>
+
+      <button matIconButton (click)="player.previous()" matTooltip="Previous frame (←)" aria-label="Previous frame">
+        <mat-icon svgIcon="step-backward" />
+      </button>
+      <button matIconButton class="play" (click)="player.toggle()" [matTooltip]="player.playing() ? 'Pause (Space)' : 'Play (Space)'" [attr.aria-label]="player.playing() ? 'Pause' : 'Play'">
+        <mat-icon [svgIcon]="player.playing() ? 'pause' : 'play'" />
+      </button>
+      <button matIconButton (click)="player.next()" matTooltip="Next frame (→)" aria-label="Next frame">
+        <mat-icon svgIcon="step-forward" />
+      </button>
+
+      <div class="info">
+        <span class="title">{{ show.name }}</span>
+        <span class="sub">
+          {{ player.currentScene()?.name ?? '–' }} · {{ player.position() + 1 }}/{{ player.frameCount() }} · {{ elapsed() }} / {{ total() }}
+        </span>
+      </div>
+
+      <span class="spacer"></span>
+      <span class="preset">{{ presetName() }}</span>
+
+      <button matIconButton (click)="toggleLoop()" [class.active]="player.loop()" matTooltip="Loop (L)" aria-label="Toggle loop">
+        <mat-icon [svgIcon]="player.loop() ? 'repeat' : 'repeat-off'" />
+      </button>
+      <button
+        matIconButton
+        (click)="setViewMode(viewMode() === 'facade' ? 'pixel' : 'facade')"
+        [class.active]="viewMode() === 'facade'"
+        [matTooltip]="viewMode() === 'facade' ? 'Show as pixels (V)' : 'Show as house front (V)'"
+        aria-label="Toggle house front view">
+        <mat-icon svgIcon="window-closed-variant" />
+      </button>
+      <button matIconButton (click)="debug.set(!debug())" [class.active]="debug()" matTooltip="Show coordinates" aria-label="Show coordinates">
+        <mat-icon svgIcon="grid" />
+      </button>
+      <button matIconButton (click)="toggleFullscreen()" [matTooltip]="fullscreen() ? 'Exit fullscreen (F)' : 'Fullscreen (F)'" aria-label="Toggle fullscreen">
+        <mat-icon [svgIcon]="fullscreen() ? 'fullscreen-exit' : 'fullscreen'" />
+      </button>
+    </div>
+  </div>
+} @else {
+  <div class="missing">
+    <p>This show doesn't exist (anymore).</p>
+    <a matButton="outlined" routerLink="/shows">Back to shows</a>
+  </div>
+}

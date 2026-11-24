@@ -1,0 +1,277 @@
+@if (show(); as show) {
+  <div class="editor">
+    <!-- toolbar -->
+    <header class="editor-bar">
+      <a matIconButton routerLink="/shows" matTooltip="Back to shows" aria-label="Back to shows">
+        <mat-icon svgIcon="arrow-left" />
+      </a>
+      <input class="title-input" [value]="show.name" (input)="setName($any($event.target).value)" aria-label="Show name" maxlength="60" />
+      @if (dirty()) {
+        <span class="chip unsaved">unsaved</span>
+      }
+      <span class="spacer"></span>
+      <button matIconButton (click)="undo()" [disabled]="!canUndo()" matTooltip="Undo (Ctrl + Z)" aria-label="Undo">
+        <mat-icon svgIcon="undo" />
+      </button>
+      <button matIconButton (click)="redo()" [disabled]="!canRedo()" matTooltip="Redo (Ctrl + Shift + Z)" aria-label="Redo">
+        <mat-icon svgIcon="redo" />
+      </button>
+      <span class="divider"></span>
+      <button matButton (click)="togglePreview()" matTooltip="Space">
+        <mat-icon [svgIcon]="previewing() ? 'pause' : 'play'" />
+        {{ previewing() ? 'Pause' : 'Preview' }}
+      </button>
+      <button matIconButton [matMenuTriggerFor]="showMenu" aria-label="More">
+        <mat-icon svgIcon="dots-vertical" />
+      </button>
+      <mat-menu #showMenu="matMenu" xPosition="before">
+        <a mat-menu-item [routerLink]="['/play', show.id]"><mat-icon svgIcon="fullscreen" />Open in player</a>
+        <button mat-menu-item (click)="export()"><mat-icon svgIcon="download" />Export</button>
+      </mat-menu>
+      <button matButton="filled" (click)="save()" [disabled]="!dirty()" matTooltip="Ctrl + S">
+        <mat-icon svgIcon="content-save" />
+        Save
+      </button>
+    </header>
+
+    <div class="workspace">
+      <!-- library -->
+      <aside class="library">
+        <section>
+          <h2 class="panel-title">Add</h2>
+          <button class="lib-item text-item" (click)="addText()" [disabled]="!currentFrame()">
+            <mat-icon svgIcon="format-text" />
+            <span>Text</span>
+          </button>
+        </section>
+
+        <section>
+          <h2 class="panel-title">Generate</h2>
+          <div class="gen-list">
+            <button matButton (click)="openGenerator('scroll')"><mat-icon svgIcon="text-box-outline" />Scrolling text</button>
+            <button matButton (click)="openGenerator('move')" [disabled]="!selectedObject()" matTooltip="Select an object first" [matTooltipDisabled]="!!selectedObject()">
+              <mat-icon svgIcon="cursor-move" />Move object
+            </button>
+            <button matButton (click)="openGenerator('blink')" [disabled]="!currentFrame()"><mat-icon svgIcon="magic-staff" />Blink frame</button>
+          </div>
+        </section>
+
+        <section class="shapes">
+          <div class="section-head">
+            <h2 class="panel-title">Shapes</h2>
+            <a matIconButton routerLink="/shapes/new" matTooltip="New shape" aria-label="New shape" class="small">
+              <mat-icon svgIcon="plus" />
+            </a>
+          </div>
+          <div class="shape-grid">
+            @for (item of shapes(); track item.shape.id) {
+              <button class="lib-item shape-item" (click)="addShape(item.shape)" [disabled]="!currentFrame()" [matTooltip]="'Add ' + item.shape.name">
+                <app-grid-thumb [grid]="item.grid" [scale]="3" />
+                <span>{{ item.shape.name }}</span>
+              </button>
+            } @empty {
+              <p class="muted small-text">No shapes yet.</p>
+            }
+          </div>
+        </section>
+      </aside>
+
+      <!-- stage -->
+      <section class="stage-area">
+        @if (stageGrid(); as grid) {
+          <app-pixel-grid
+            [grid]="grid"
+            fit="contain"
+            [interactive]="true"
+            [highlights]="highlights()"
+            [ghost]="ghostGrid()"
+            [debug]="debug()"
+            (pixelPointer)="onStagePointer($event)"
+            (pixelPointerEnd)="onStagePointerEnd()" />
+        }
+        <footer class="stage-bar muted">
+          <span>{{ show.size.width }} × {{ show.size.height }}</span>
+          <span>·</span>
+          <span>{{ totalDuration() }}</span>
+          @if (previewing()) {
+            <span class="live">● preview</span>
+          }
+          <span class="spacer"></span>
+          <button matIconButton (click)="onionSkin.set(!onionSkin())" [class.active]="onionSkin()" matTooltip="Onion skin: show previous frame (O)" aria-label="Onion skin">
+            <mat-icon svgIcon="layers-outline" />
+          </button>
+          <button matIconButton (click)="debug.set(!debug())" [class.active]="debug()" matTooltip="Show coordinates" aria-label="Show coordinates">
+            <mat-icon svgIcon="grid" />
+          </button>
+        </footer>
+      </section>
+
+      <!-- properties -->
+      <aside class="properties">
+        @if (selectedObject(); as object) {
+          <section>
+            <div class="section-head">
+              <h2 class="panel-title">
+                <mat-icon [svgIcon]="objectIcon(object)" class="inline-icon" />
+                {{ object.type }}
+              </h2>
+              <button matIconButton class="small" (click)="selectedId.set(null)" matTooltip="Deselect (Esc)" aria-label="Deselect">
+                <mat-icon svgIcon="close" />
+              </button>
+            </div>
+
+            @if (object.type === 'shape') {
+              <mat-form-field appearance="outline" class="field" subscriptSizing="dynamic">
+                <mat-label>Shape</mat-label>
+                <mat-select [value]="object.shapeId" (selectionChange)="setShapeId($event.value)">
+                  @for (item of shapes(); track item.shape.id) {
+                    <mat-option [value]="item.shape.id">{{ item.shape.name }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+            }
+            @if (asText(object); as textObject) {
+              <label class="label">Text</label>
+              <textarea class="input" rows="2" [value]="textObject.text" (input)="setText($any($event.target).value)"></textarea>
+              <label class="row">
+                <span>Letter spacing</span>
+                <input class="input num" type="number" min="0" max="10" [value]="textObject.spacing ?? 1" (change)="setSpacing(+$any($event.target).value)" />
+              </label>
+            }
+
+            <div class="row two">
+              <label><span>x</span><input class="input num" type="number" [value]="object.position.x" (input)="setPosition('x', +$any($event.target).value)" /></label>
+              <label><span>y</span><input class="input num" type="number" [value]="object.position.y" (input)="setPosition('y', +$any($event.target).value)" /></label>
+            </div>
+            <mat-slide-toggle [checked]="!!object.inverted" (change)="setInverted($event.checked)">Inverted</mat-slide-toggle>
+
+            <div class="actions">
+              <button matIconButton (click)="reorderSelected(1)" matTooltip="Bring forward" aria-label="Bring forward"><mat-icon svgIcon="arrow-up" /></button>
+              <button matIconButton (click)="reorderSelected(-1)" matTooltip="Send backward" aria-label="Send backward"><mat-icon svgIcon="arrow-down" /></button>
+              <button matIconButton (click)="duplicateSelected()" matTooltip="Duplicate" aria-label="Duplicate object"><mat-icon svgIcon="content-copy" /></button>
+              <button matIconButton (click)="applyToRestOfScene()" matTooltip="Apply to the rest of this scene" aria-label="Apply to rest of scene"><mat-icon svgIcon="chevron-right" /></button>
+              <button matIconButton (click)="deleteSelected()" matTooltip="Delete (Del)" aria-label="Delete object"><mat-icon svgIcon="delete" /></button>
+            </div>
+            <p class="muted small-text">Drag on the stage or use the arrow keys (Shift = 5 px).</p>
+          </section>
+        }
+
+        @if (currentFrame(); as frame) {
+          <section>
+            <h2 class="panel-title">Frame {{ frameIndex() + 1 }} of {{ currentScene()?.frames?.length }}</h2>
+            <label class="row">
+              <span>Duration (ms)</span>
+              <input class="input num wide" type="number" min="0" step="10" [value]="frame.duration" [disabled]="frame.duration === 0" (input)="setDuration(+$any($event.target).value)" />
+            </label>
+            <mat-slide-toggle [checked]="frame.duration === 0" (change)="setHold($event.checked)">Hold until continued</mat-slide-toggle>
+            <button matButton class="link-button" (click)="applyDurationToScene()">Use this duration for the whole scene</button>
+
+            <h3 class="panel-title sub">Objects</h3>
+            <ul class="layers">
+              @for (object of frame.objects.slice().reverse(); track object.id) {
+                <li>
+                  <button class="layer" [class.selected]="object.id === selectedId()" (click)="selectedId.set(object.id)">
+                    <mat-icon [svgIcon]="objectIcon(object)" />
+                    <span>{{ objectLabel(object) }}</span>
+                    <span class="muted pos">{{ object.position.x }},{{ object.position.y }}</span>
+                  </button>
+                </li>
+              } @empty {
+                <li class="muted small-text">Empty frame. Add text or a shape from the left.</li>
+              }
+            </ul>
+          </section>
+        }
+
+        <section>
+          <h2 class="panel-title">Show</h2>
+          <mat-form-field appearance="outline" class="field" subscriptSizing="dynamic">
+            <mat-label>Grid</mat-label>
+            <mat-select [value]="presetId()" (selectionChange)="setPreset($event.value)">
+              @for (preset of presets; track preset.id) {
+                <mat-option [value]="preset.id">{{ preset.name }} · {{ preset.size.width }}×{{ preset.size.height }}</mat-option>
+              }
+              @if (presetId() === 'custom') {
+                <mat-option value="custom" disabled>Custom · {{ show.size.width }}×{{ show.size.height }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+          <label class="label">Description</label>
+          <textarea class="input" rows="2" [value]="show.description" (input)="setDescription($any($event.target).value)"></textarea>
+          <mat-slide-toggle [checked]="show.loop" (change)="setLoop($event.checked)">Loop</mat-slide-toggle>
+        </section>
+      </aside>
+    </div>
+
+    <!-- timeline -->
+    <div class="timeline" #timeline cdkDropListGroup>
+      @for (scene of show.scenes; track scene.id; let si = $index) {
+        <section class="scene" [class.current]="si === sceneIndex()">
+          <header class="scene-head">
+            <input class="scene-name" [value]="scene.name" (input)="renameScene(si, $any($event.target).value)" aria-label="Scene name" />
+            <span class="muted scene-meta">{{ scene.frames.length }} · {{ sceneStats()[si] }}</span>
+            <button matIconButton class="small" [matMenuTriggerFor]="sceneMenu" aria-label="Scene actions">
+              <mat-icon svgIcon="dots-vertical" />
+            </button>
+            <mat-menu #sceneMenu="matMenu">
+              <button mat-menu-item (click)="player.load(show); player.seekScene(si); player.play()"><mat-icon svgIcon="play" />Preview scene</button>
+              <button mat-menu-item (click)="duplicateScene(si)"><mat-icon svgIcon="content-copy" />Duplicate</button>
+              <button mat-menu-item (click)="moveScene(si, -1)" [disabled]="si === 0"><mat-icon svgIcon="arrow-left" />Move left</button>
+              <button mat-menu-item (click)="moveScene(si, 1)" [disabled]="si === show.scenes.length - 1"><mat-icon svgIcon="arrow-right" />Move right</button>
+              <button mat-menu-item (click)="deleteScene(si)"><mat-icon svgIcon="delete" />Delete</button>
+            </mat-menu>
+          </header>
+          <div
+            class="frames"
+            cdkDropList
+            cdkDropListOrientation="horizontal"
+            [cdkDropListData]="si"
+            (cdkDropListDropped)="dropFrame($event)">
+            @for (frame of scene.frames; track frame.id; let fi = $index) {
+              <div
+                class="frame"
+                cdkDrag
+                [cdkDragData]="fi"
+                tabindex="0"
+                role="button"
+                [attr.aria-label]="'Frame ' + (fi + 1)"
+                [class.selected]="si === sceneIndex() && fi === frameIndex() && !playhead()"
+                [class.playing]="playhead()?.scene === si && playhead()?.frame === fi"
+                [style.width.px]="thumbWidth()"
+                (click)="selectFrame(si, fi)"
+                (keydown.enter)="selectFrame(si, fi)"
+                (contextmenu)="openFrameMenu($event, frameMenuTrigger, si, fi)">
+                <app-grid-thumb [grid]="thumbs()[si][fi]" [scale]="3" />
+                <span class="frame-meta">
+                  <span>{{ fi + 1 }}</span>
+                  <span>{{ frame.duration === 0 ? 'hold' : frame.duration }}</span>
+                </span>
+              </div>
+            }
+            <button class="add-frame" (click)="addFrame(si)" matTooltip="Add frame (copy of the last one)" aria-label="Add frame" [style.width.px]="Math.min(thumbWidth(), 44)">
+              <mat-icon svgIcon="plus" />
+            </button>
+          </div>
+        </section>
+      }
+      <button class="add-scene" (click)="addScene()">
+        <mat-icon svgIcon="plus" />
+        Scene
+      </button>
+      <!-- context menu for frames (opened by right click) -->
+      <span class="menu-anchor" #frameMenuTrigger="matMenuTrigger" [matMenuTriggerFor]="frameMenu" [style.left.px]="menuPosition().x" [style.top.px]="menuPosition().y"></span>
+      <mat-menu #frameMenu="matMenu">
+        <button mat-menu-item (click)="duplicateFrame()"><mat-icon svgIcon="content-copy" />Duplicate <span class="kbd-hint">Ctrl+D</span></button>
+        <button mat-menu-item (click)="insertEmptyFrameAfter()"><mat-icon svgIcon="plus" />Insert empty frame after</button>
+        <button mat-menu-item (click)="deleteFrame()"><mat-icon svgIcon="delete" />Delete</button>
+      </mat-menu>
+    </div>
+  </div>
+} @else {
+  <div class="page">
+    <div class="panel empty-state">
+      <p>This show doesn't exist (anymore).</p>
+      <a matButton="outlined" routerLink="/shows">Back to shows</a>
+    </div>
+  </div>
+}
