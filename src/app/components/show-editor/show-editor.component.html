@@ -26,7 +26,9 @@
       </button>
       <mat-menu #showMenu="matMenu" xPosition="before">
         <a mat-menu-item [routerLink]="['/play', show.id]"><mat-icon svgIcon="fullscreen" />Open in player</a>
-        <button mat-menu-item (click)="export()"><mat-icon svgIcon="download" />Export</button>
+        <button mat-menu-item (click)="export()"><mat-icon svgIcon="download" />Export (.blinken.json)</button>
+        <button mat-menu-item (click)="exportMovie('blm')"><mat-icon svgIcon="download" />Export as original movie (.blm)</button>
+        <button mat-menu-item (click)="exportMovie('bml')"><mat-icon svgIcon="download" />Export as original markup (.bml)</button>
       </mat-menu>
       <button matButton="filled" (click)="save()" [disabled]="!dirty()" matTooltip="Ctrl + S">
         <mat-icon svgIcon="content-save" />

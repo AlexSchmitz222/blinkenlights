@@ -79,6 +79,10 @@ export class ShowListComponent {
     this.files.exportShow(show);
   }
 
+  exportMovie(show: Show, format: 'blm' | 'bml') {
+    this.files.exportMovie(show, format);
+  }
+
   exportBackup() {
     this.files.exportBackup();
   }
@@ -100,7 +104,15 @@ export class ShowListComponent {
     input.value = '';
     if (!file) return;
     try {
-      const parsed = this.files.parse(await file.text());
+      const content = await file.text();
+      const movie = this.files.importMovie(content, file.name);
+      if (movie) {
+        this.snackBar.open(`Imported "${movie.name}" (${movie.scenes[0].frames.length} frames)`, 'Play', { duration: 5000 })
+          .onAction()
+          .subscribe(() => this.router.navigate(['/play', movie.id]));
+        return;
+      }
+      const parsed = this.files.parse(content);
 
       if (parsed.format === 'blinkenlights-backup') {
         const ok = await firstValueFrom(this.dialogs.showBooleanDialog(

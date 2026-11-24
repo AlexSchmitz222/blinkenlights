@@ -105,6 +105,15 @@ describe('ShowFileService', () => {
     expect(storage.getShape('shape_dot')).toBeTruthy();
   });
 
+  it('imports original BLM movies as a new show with a unique name', () => {
+    const blm = '# BlinkenLights Movie 2x1\n# name = Test show\n@100\n10\n@100\n01\n';
+    storage.saveShow(show);
+    const imported = files.importMovie(blm, 'x.blm');
+    expect(imported?.name).toBe('Test show (2)');
+    expect(storage.getShow(imported!.id)?.scenes[0].frames.length).toBe(2);
+    expect(files.importMovie('{"format":"blinkenlights-show"}', 'x.json')).toBeNull();
+  });
+
   it('rejects broken or foreign files with a readable message', () => {
     expect(() => files.parse('{nope')).toThrowError(InvalidFileError);
     expect(() => files.parse('{"format":"other"}')).toThrowError(/not a Blinkenlights file/);

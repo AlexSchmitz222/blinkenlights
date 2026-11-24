@@ -3,6 +3,10 @@ import { Show } from '../interfaces/show.interface';
 import { Shape } from '../interfaces/shape.interface';
 import { StorageService } from './storage.service';
 import { createId } from '../utils/id';
+import { InvalidFileError } from '../errors/InvalidFile.error';
+import { BlinkenFormatService, MovieFormat } from './blinken-format.service';
+
+export { InvalidFileError };
 
 /** A single show with every shape it uses, so it works in any browser. */
 export interface ShowFile {
@@ -23,13 +27,6 @@ export interface BackupFile {
 
 export type BlinkenFile = ShowFile | BackupFile;
 
-export class InvalidFileError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'InvalidFileError';
-  }
-}
-
 export interface ImportResult {
   show: Show;
   /** Shapes that were added (new, or a changed copy of an existing one under a new id). */
@@ -43,6 +40,7 @@ export interface ImportResult {
 export class ShowFileService {
   private storage = inject(StorageService);
   private document = inject(DOCUMENT);
+  private movies = inject(BlinkenFormatService);
 
   // --- export ----------------------------------------------------------------------------------
 
@@ -69,6 +67,21 @@ export class ShowFileService {
 
   exportShow(show: Show) {
     this.download(`${slug(show.name) || 'show'}.blinken.json`, JSON.stringify(this.createShowFile(show), null, 2));
+  }
+
+  /** Exports in the original Blinkenlights formats (pixels only: shapes and text are rendered). */
+  exportMovie(show: Show, format: MovieFormat) {
+    const resolve = (id: string) => this.storage.getShape(id);
+    const content = format === 'blm' ? this.movies.toBlm(show, resolve) : this.movies.toBml(show, resolve);
+    this.download(`${slug(show.name) || 'show'}.${format}`, content, format === 'blm' ? 'text/plain' : 'application/xml');
+  }
+
+  /** Imports a BLM/BML movie as a new show. Returns null if the content isn't a movie. */
+  importMovie(content: string, fileName: string): Show | null {
+    if (!this.movies.detect(content)) return null;
+    const show = this.movies.parse(content, fileName);
+    show.name = this.uniqueName(show.name, n => this.storage.isShowNameTaken(n));
+    return this.storage.saveShow(show);
   }
 
   exportBackup() {

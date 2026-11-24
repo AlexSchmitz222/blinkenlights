@@ -644,6 +644,11 @@ export class ShowEditorComponent implements HasUnsavedChanges {
     if (show) this.files.exportShow(show);
   }
 
+  exportMovie(format: 'blm' | 'bml') {
+    const show = this.show();
+    if (show) this.files.exportMovie(show, format);
+  }
+
   // --- generators ------------------------------------------------------------------------------
 
   openGenerator(kind: GeneratorKind) {
