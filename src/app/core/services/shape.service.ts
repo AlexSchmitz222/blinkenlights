@@ -50,6 +50,33 @@ export class ShapeService {
     };
   }
 
+  /** Moves all pixels by (dx, dy); pixels leaving one edge wrap around to the other, so nothing is lost. */
+  shiftShape(shape: Shape, dx: number, dy: number): Shape {
+    const { width, height } = shape.size;
+    return this.mapPixels(shape, ({ x, y }) => ({
+      x: (((x + dx) % width) + width) % width,
+      y: (((y + dy) % height) + height) % height,
+    }));
+  }
+
+  flipShape(shape: Shape, axis: 'horizontal' | 'vertical'): Shape {
+    const { width, height } = shape.size;
+    return this.mapPixels(shape, ({ x, y }) =>
+      axis === 'horizontal' ? { x: width - 1 - x, y } : { x, y: height - 1 - y },
+    );
+  }
+
+  /** Returns a copy with pixel (x, y) set on or off. */
+  setPixel(shape: Shape, x: number, y: number, on: boolean): Shape {
+    const pattern = shape.pattern.filter(p => p.position.x !== x || p.position.y !== y);
+    if (on) pattern.push({ position: { x, y }, active: true });
+    return { ...shape, pattern };
+  }
+
+  isPixelOn(shape: Shape, x: number, y: number): boolean {
+    return shape.pattern.some(p => p.position.x === x && p.position.y === y && p.active === true);
+  }
+
   transformShapeToGrid(shape: Shape, gridId: string = shape.id, gridDescription: string = shape.description): Grid {
     const lookup = this.lookup(shape.pattern);
     const pixels: Pixel[][] = [];
@@ -71,13 +98,21 @@ export class ShapeService {
     };
   }
 
-  transformGridToShape(grid: Grid, shapeId: string, shapeDescription: string): Shape {
+  transformGridToShape(grid: Grid, meta: Pick<Shape, 'id' | 'name' | 'description'>): Shape {
     return {
-      id: shapeId,
-      description: shapeDescription,
+      id: meta.id,
+      name: meta.name,
+      description: meta.description,
       size: { width: grid.size.width, height: grid.size.height },
       pattern: this.toSparsePattern(grid.pixels.flat()),
       inverted: grid.inverted,
+    };
+  }
+
+  private mapPixels(shape: Shape, fn: (pos: { x: number; y: number }) => { x: number; y: number }): Shape {
+    return {
+      ...shape,
+      pattern: shape.pattern.map(p => ({ ...p, position: fn(p.position) })),
     };
   }
 

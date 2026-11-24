@@ -7,6 +7,7 @@ describe('ShapeService', () => {
 
   const shape: Shape = {
     id: 'dot',
+    name: 'Dot',
     description: 'a dot',
     size: { width: 4, height: 3 },
     pattern: [
@@ -29,7 +30,7 @@ describe('ShapeService', () => {
     expect(grid.size).toEqual({ width: 4, height: 3 });
     expect(grid.pixels[1][1].active).toBe(true);
 
-    const back = service.transformGridToShape(grid, 'dot', 'a dot');
+    const back = service.transformGridToShape(grid, { id: 'dot', name: 'Dot', description: 'a dot' });
     expect(back.size).toEqual(shape.size);
     expect(back.pattern).toEqual([{ position: { x: 1, y: 1 }, active: true }]);
   });
@@ -38,6 +39,26 @@ describe('ShapeService', () => {
     const dense = service.toDensePattern(shape.pattern, shape.size);
     expect(dense.length).toBe(12);
     expect(dense.filter(p => p.active).length).toBe(1);
+  });
+
+  it('shifts pixels and wraps them around the edges', () => {
+    const shifted = service.shiftShape(shape, 3, -2);
+    expect(shifted.pattern[0].position).toEqual({ x: 0, y: 2 });
+    expect(service.shiftShape(shifted, -3, 2).pattern[0].position).toEqual({ x: 1, y: 1 });
+  });
+
+  it('flips horizontally and vertically', () => {
+    expect(service.flipShape(shape, 'horizontal').pattern[0].position).toEqual({ x: 2, y: 1 });
+    expect(service.flipShape(shape, 'vertical').pattern[0].position).toEqual({ x: 1, y: 1 });
+  });
+
+  it('sets and clears single pixels without duplicates', () => {
+    let s = service.setPixel(shape, 1, 1, true);
+    expect(s.pattern.filter(p => p.position.x === 1 && p.position.y === 1).length).toBe(1);
+    s = service.setPixel(s, 1, 1, false);
+    expect(service.isPixelOn(s, 1, 1)).toBe(false);
+    s = service.setPixel(s, 0, 2, true);
+    expect(service.isPixelOn(s, 0, 2)).toBe(true);
   });
 
   it('inverts without mutating the input', () => {

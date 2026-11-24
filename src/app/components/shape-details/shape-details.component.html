@@ -1,68 +1,110 @@
-<div class="container">
-  <mat-toolbar>
-    <button mat-stroked-button routerLink="/shapes">back</button>
-    &nbsp;
-    <h2>Shape Editor</h2>
-    &nbsp;
-    <mat-chip-set>
-      <mat-chip>Id: {{shape.id}}</mat-chip>
-    </mat-chip-set>
-    &nbsp;
-    <span class="spacer"></span>
-    <mat-chip-set>
-      <mat-chip>Description: {{shape.description}}</mat-chip>
-    </mat-chip-set>
-  </mat-toolbar>
-  <mat-sidenav-container>
-    <mat-sidenav disableClose mode="side" opened>
-      <div class="spacer"></div>
-      <span class="controlContainer border">Width:&nbsp;
-        <mat-slider [min]="sliderParams.width.min" [max]="sliderParams.width.max" step="1" showTickMarks
-          discrete>
-          <input matSliderThumb [(ngModel)]="shape.size.width" (change)="updateGrid()">
-        </mat-slider>
-        &nbsp;{{shape.size.width}}
-      </span>
-      <span class="controlContainer border">Height:&nbsp;
-        <mat-slider [min]="sliderParams.height.min" [max]="sliderParams.height.max" step="1" showTickMarks
-          discrete>
-          <input matSliderThumb [(ngModel)]="shape.size.height" (change)="updateGrid()">
-        </mat-slider>
-        &nbsp;{{shape.size.height}}
-      </span>
-      <span class="controlContainer border pad">
-        <mat-slide-toggle [checked]="invert" (change)="invertShape()" labelPosition="before">Invert
-        </mat-slide-toggle>
-      </span>
-      <mat-divider></mat-divider>
-      <span class="controlContainer">
-        <button mat-stroked-button (click)="clearGrid()">Clear Shape</button>
-      </span>
-      <span class="controlContainer">
-        <button mat-stroked-button (click)="changeShapeName()">Edit Name</button>
-      </span>
-      <span class="controlContainer">
-        <button mat-stroked-button (click)="changeShapeDescription()">Edit Description</button>
-      </span>
-      <span class="controlContainer">
-        <button mat-stroked-button (click)="saveShape()">Save Shape</button>
-      </span>
-    </mat-sidenav>
-    <mat-sidenav-content>
-      <div class="content">
-        <div class="shapePreview">
-          @for (row of grid.pixels; track row) {
-            <div class="pixelRow">
-              @for (pixel of row; track pixel) {
-                <div class="pixel" [class.on]="pixel.active"
-                  [class.off]="!pixel.active" (click)="pixel.active = !pixel.active; updateGrid(true)">
-                </div>
-              }
+@if (shape(); as shape) {
+  <div class="editor">
+    <header class="editor-bar">
+      <a matIconButton routerLink="/shapes" matTooltip="Back to shapes" aria-label="Back to shapes">
+        <mat-icon svgIcon="arrow-left" />
+      </a>
+      <h1>{{ shape.name || 'Untitled' }}</h1>
+      @if (dirty()) {
+        <span class="chip unsaved" matTooltip="Unsaved changes">unsaved</span>
+      }
+      <span class="spacer"></span>
+      @if (!isNew()) {
+        <button matButton (click)="delete()">
+          <mat-icon svgIcon="delete" />
+          Delete
+        </button>
+      }
+      <button matButton="filled" (click)="save()" [disabled]="!dirty() && !isNew()" matTooltip="Ctrl + S">
+        <mat-icon svgIcon="content-save" />
+        Save
+      </button>
+    </header>
+
+    <div class="body">
+      <aside class="sidebar">
+        <section>
+          <h2 class="panel-title">Details</h2>
+          <mat-form-field appearance="outline" class="field">
+            <mat-label>Name</mat-label>
+            <input matInput [value]="shape.name" (input)="setName($any($event.target).value)" maxlength="40" />
+            @if (nameError(); as error) {
+              <mat-hint class="error">{{ error }}</mat-hint>
+            }
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="field">
+            <mat-label>Description</mat-label>
+            <textarea matInput rows="2" [value]="shape.description" (input)="setDescription($any($event.target).value)"></textarea>
+          </mat-form-field>
+        </section>
+
+        <section>
+          <h2 class="panel-title">Size</h2>
+          @for (dim of dimensions; track dim) {
+            <div class="stepper">
+              <span class="label">{{ dim }}</span>
+              <button matIconButton (click)="resize(dim, -1)" [disabled]="shape.size[dim] <= minSize()[dim]" [attr.aria-label]="'Decrease ' + dim">
+                <mat-icon svgIcon="minus" />
+              </button>
+              <input
+                type="number"
+                class="number"
+                [value]="shape.size[dim]"
+                [min]="minSize()[dim]"
+                [max]="maxSize[dim]"
+                (change)="setSize(dim, +$any($event.target).value); $any($event.target).value = shape.size[dim]"
+                [attr.aria-label]="dim" />
+              <button matIconButton (click)="resize(dim, 1)" [disabled]="shape.size[dim] >= maxSize[dim]" [attr.aria-label]="'Increase ' + dim">
+                <mat-icon svgIcon="plus" />
+              </button>
             </div>
           }
-        </div>
-      </div>
-    </mat-sidenav-content>
-  </mat-sidenav-container>
+          <p class="hint muted">Can't shrink below the drawn pixels ({{ minSize().width }} × {{ minSize().height }}).</p>
+        </section>
 
-</div>
+        <section>
+          <h2 class="panel-title">Transform</h2>
+          <div class="tool-grid">
+            <button matIconButton (click)="shift(0, -1)" matTooltip="Move up (Alt + ↑)" aria-label="Move up"><mat-icon svgIcon="arrow-up" /></button>
+            <button matIconButton (click)="shift(0, 1)" matTooltip="Move down (Alt + ↓)" aria-label="Move down"><mat-icon svgIcon="arrow-down" /></button>
+            <button matIconButton (click)="shift(-1, 0)" matTooltip="Move left (Alt + ←)" aria-label="Move left"><mat-icon svgIcon="arrow-left" /></button>
+            <button matIconButton (click)="shift(1, 0)" matTooltip="Move right (Alt + →)" aria-label="Move right"><mat-icon svgIcon="arrow-right" /></button>
+            <button matIconButton (click)="flip('horizontal')" matTooltip="Flip horizontally" aria-label="Flip horizontally"><mat-icon svgIcon="flip-horizontal" /></button>
+            <button matIconButton (click)="flip('vertical')" matTooltip="Flip vertically" aria-label="Flip vertically"><mat-icon svgIcon="flip-vertical" /></button>
+            <button matIconButton (click)="invert()" matTooltip="Invert" aria-label="Invert"><mat-icon svgIcon="invert-colors" /></button>
+            <button matIconButton (click)="clear()" [disabled]="activeCount() === 0" matTooltip="Clear" aria-label="Clear"><mat-icon svgIcon="eraser" /></button>
+          </div>
+        </section>
+
+        <section class="help muted">
+          <p>Click or drag to draw. Start on a lit pixel to erase instead; right-drag always erases.</p>
+        </section>
+      </aside>
+
+      <section class="canvas">
+        <app-pixel-grid
+          [grid]="grid()!"
+          fit="contain"
+          [interactive]="true"
+          [debug]="debug()"
+          (pixelPointer)="onPixel($event)" />
+        <footer class="canvas-bar muted">
+          <span>{{ shape.size.width }} × {{ shape.size.height }}</span>
+          <span>·</span>
+          <span>{{ activeCount() }} lit</span>
+          <span class="spacer"></span>
+          <button matIconButton (click)="debug.set(!debug())" [class.active]="debug()" matTooltip="Show coordinates" aria-label="Show coordinates">
+            <mat-icon svgIcon="grid" />
+          </button>
+        </footer>
+      </section>
+    </div>
+  </div>
+} @else {
+  <div class="page">
+    <div class="panel empty-state">
+      <p>This shape doesn't exist (anymore).</p>
+      <a matButton="outlined" routerLink="/shapes">Back to shapes</a>
+    </div>
+  </div>
+}

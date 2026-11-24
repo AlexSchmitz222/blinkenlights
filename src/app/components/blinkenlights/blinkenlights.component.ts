@@ -1,11 +1,15 @@
 import { Component, OnInit, ChangeDetectionStrategy, inject } from '@angular/core';
 import { Grid, createEmptyGrid } from '../../core/interfaces/grid.interface';
 import { GridService } from '../../core/services/grid.service';
-import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { RouterLink } from '@angular/router';
+import { PixelGridComponent } from '../../shared/pixel-grid/pixel-grid.component';
 
 @Component({
   selector: 'app-blinkenlights',
-  imports: [MatSlideToggleModule],
+  imports: [PixelGridComponent, MatButtonModule, MatIconModule, MatTooltipModule, RouterLink],
   templateUrl: './blinkenlights.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './blinkenlights.component.scss'

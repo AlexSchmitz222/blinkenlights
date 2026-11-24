@@ -1,121 +1,232 @@
-import { Component, OnInit, ChangeDetectionStrategy, inject } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, input, signal, computed, effect, untracked } from '@angular/core';
+import { Router, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
-import { MatToolbarModule } from '@angular/material/toolbar';
-import { ActivatedRoute } from '@angular/router';
-import { RouterLink } from '@angular/router';
-import { createEmptyGrid, Grid } from '../../core/interfaces/grid.interface';
-import { ShapeService } from '../../core/services/shape.service';
-import { createEmptyShape, Shape } from '../../core/interfaces/shape.interface';
-
+import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
-import { FormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatChipsModule } from '@angular/material/chips';
-import { MatSliderModule } from '@angular/material/slider';
-import { MatSlideToggleModule } from '@angular/material/slide-toggle';
-import { BasicDialogService } from '../../core/services/basic-dialog.service';
-import { MatSidenavModule } from '@angular/material/sidenav';
-import { MatDividerModule } from '@angular/material/divider';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { Shape } from '../../core/interfaces/shape.interface';
+import { ShapeService } from '../../core/services/shape.service';
 import { StorageService } from '../../core/services/storage.service';
+import { BasicDialogService } from '../../core/services/basic-dialog.service';
+import { HasUnsavedChanges } from '../../core/guards/unsaved-changes.guard';
+import { PixelGridComponent, PixelPointerEvent } from '../../shared/pixel-grid/pixel-grid.component';
+import { createId } from '../../core/utils/id';
+
+export const SHAPE_MAX_SIZE = { width: 39, height: 21 };
+const NEW_SHAPE_SIZE = { width: 8, height: 8 };
 
 @Component({
   selector: 'app-shape-details',
-  imports: [MatToolbarModule, RouterLink, MatButtonModule, MatInputModule, MatFormFieldModule, FormsModule, MatChipsModule, MatSliderModule, MatSlideToggleModule, MatSidenavModule, MatDividerModule],
+  imports: [RouterLink, MatButtonModule, MatIconModule, MatInputModule, MatFormFieldModule, MatTooltipModule, PixelGridComponent],
   templateUrl: './shape-details.component.html',
-  changeDetection: ChangeDetectionStrategy.Eager,
-  styleUrl: './shape-details.component.scss'
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  styleUrl: './shape-details.component.scss',
+  host: {
+    '(window:keydown)': 'onKeydown($event)',
+    '(window:beforeunload)': 'onBeforeUnload($event)',
+  },
 })
-export class ShapeDetailsComponent implements OnInit {
-  private route = inject(ActivatedRoute);
+export class ShapeDetailsComponent implements HasUnsavedChanges {
   private shapeService = inject(ShapeService);
-  private basicDialogService = inject(BasicDialogService);
-  private storageService = inject(StorageService);
+  private storage = inject(StorageService);
+  private dialogs = inject(BasicDialogService);
+  private snackBar = inject(MatSnackBar);
+  private router = inject(Router);
 
-  sliderParams: {
-    width: { min: number, max: number },
-    height: { min: number, max: number }
-  } = {
-      width: { min: 2, max: 10 },
-      height: { min: 2, max: 10 }
-    };
+  /** Route parameter (`/shapes/:shapeId`); 'new' creates a shape. */
+  readonly shapeId = input.required<string>();
 
-  invert: boolean = false
-  shapeId: string | null = null;
-  shape: Shape = createEmptyShape();
-  grid: Grid = createEmptyGrid();
-  ngOnInit() {
-    this.shapeId = this.route.snapshot.paramMap.get('shapeId');
-    if (this.shapeId == 'new') {
-      this.shape.size.width = this.sliderParams.width.min;
-      this.shape.size.height = this.sliderParams.height.min;
-      this.shape.id = 'New Shape'
-      this.shape.pattern.push({ position: { x: 0, y: 0 }, active: false })
-      this.grid = this.shapeService.transformShapeToGrid(this.shape, this.shape.id)
+  readonly maxSize = SHAPE_MAX_SIZE;
+  readonly dimensions = ['width', 'height'] as const;
+  readonly shape = signal<Shape | null>(null);
+  readonly isNew = computed(() => this.shapeId() === 'new');
+  readonly debug = signal(false);
+
+  /** JSON of the last saved state; used to detect unsaved changes. */
+  private savedSnapshot = signal('');
+  readonly dirty = computed(() => {
+    const shape = this.shape();
+    return !!shape && JSON.stringify(shape) !== this.savedSnapshot();
+  });
+
+  readonly grid = computed(() => {
+    const shape = this.shape();
+    return shape ? this.shapeService.transformShapeToGrid(shape) : null;
+  });
+
+  /** The shape can't shrink below the area its active pixels cover. */
+  readonly minSize = computed(() => {
+    const shape = this.shape();
+    const required = shape ? this.shapeService.getShapeRequiredSize(shape) : { width: 1, height: 1 };
+    return { width: Math.max(1, required.width), height: Math.max(1, required.height) };
+  });
+
+  readonly activeCount = computed(() => this.shape()?.pattern.filter(p => p.active).length ?? 0);
+
+  readonly nameError = computed(() => {
+    const shape = this.shape();
+    if (!shape) return null;
+    if (!shape.name.trim()) return 'Name is required';
+    if (this.storage.isShapeNameTaken(shape.name, shape.id)) return 'Another shape already uses this name';
+    return null;
+  });
+
+  private paintValue = true;
+
+  constructor() {
+    effect(() => {
+      const id = this.shapeId();
+      untracked(() => this.load(id));
+    });
+  }
+
+  hasUnsavedChanges(): boolean {
+    return this.dirty();
+  }
+
+  private load(id: string) {
+    let shape: Shape | null;
+    if (id === 'new') {
+      shape = {
+        id: '',
+        name: this.uniqueName('New shape'),
+        description: '',
+        size: { ...NEW_SHAPE_SIZE },
+        pattern: [],
+        inverted: false,
+      };
     } else {
-      if (this.shapeId != null) {
-        let shape = this.storageService.getShape(this.shapeId);
-        if (shape) {
-          this.shape = shape;
-          this.grid = this.shapeService.transformShapeToGrid(this.shape, this.shape.id)
-        }
-
-      }
+      const stored = this.storage.getShape(id);
+      shape = stored ? structuredClone(stored) : null;
     }
-    this.updateMinGridSize();
+    this.shape.set(shape);
+    // A brand-new shape counts as unsaved only once something was drawn or renamed.
+    this.savedSnapshot.set(shape ? JSON.stringify(shape) : '');
   }
 
-  updateGrid(updateShape: boolean = false) {
-    if (updateShape) {
-      this.shape = this.shapeService.transformGridToShape(this.grid, this.shape.id, this.shape.description);
+  // --- editing ---------------------------------------------------------------------------------
+
+  private edit(fn: (shape: Shape) => Shape) {
+    this.shape.update(shape => (shape ? fn(shape) : shape));
+  }
+
+  onPixel(event: PixelPointerEvent) {
+    const shape = this.shape();
+    if (!shape) return;
+    if (event.phase === 'start') {
+      // Right click always erases; otherwise the first pixel decides whether this stroke draws or erases.
+      this.paintValue = event.button === 2 ? false : !this.shapeService.isPixelOn(shape, event.x, event.y);
     }
-    this.grid = this.shapeService.transformShapeToGrid(this.shape, this.shape.id);
-    this.updateMinGridSize()
+    if (this.shapeService.isPixelOn(shape, event.x, event.y) === this.paintValue) return;
+    this.edit(s => this.shapeService.setPixel(s, event.x, event.y, this.paintValue));
   }
 
-  updateMinGridSize() {
-    let minSize = this.shapeService.getShapeRequiredSize(this.shape)
-    this.sliderParams.width.min = minSize.width < 2 ? 2 : minSize.width;
-    this.sliderParams.height.min = minSize.height < 2 ? 2 : minSize.height;
+  setName(name: string) {
+    this.edit(s => ({ ...s, name }));
   }
 
-  invertShape() {
-    this.invert = !this.invert;
-    this.shape = this.shapeService.invertShape(this.shape);
-    this.grid = this.shapeService.transformShapeToGrid(this.shape, this.shape.id);
-    this.updateMinGridSize();
+  setDescription(description: string) {
+    this.edit(s => ({ ...s, description }));
   }
 
-  clearGrid() {
-    this.basicDialogService.showBooleanDialog("Really...?", "Do you really want to clear the shape?").subscribe((result) => {
-      if (result) {
-        this.shape.pattern = [];
-        this.updateGrid();
-      }
-    })
-
+  resize(dimension: 'width' | 'height', delta: number) {
+    this.setSize(dimension, (this.shape()?.size[dimension] ?? 0) + delta);
   }
 
-  changeShapeName() {
-    this.basicDialogService.showInputDialog({ title: "Rename shape", label: "Name", value: this.shape.id }).subscribe((result) => {
-      if (result) {
-        this.shape.id = result;
-        this.updateGrid(true);
-      }
-    })
+  setSize(dimension: 'width' | 'height', value: number) {
+    if (!Number.isFinite(value)) return;
+    const clamped = Math.min(this.maxSize[dimension], Math.max(this.minSize()[dimension], Math.round(value)));
+    this.edit(s => ({ ...s, size: { ...s.size, [dimension]: clamped } }));
   }
 
-  changeShapeDescription() {
-    this.basicDialogService.showInputDialog({ title: "Edit description", label: "Description", value: this.shape.description, multiline: true }).subscribe((result) => {
-      if (result) {
-        this.shape.description = result;
-        this.updateGrid(true);
-      }
-    })
+  shift(dx: number, dy: number) {
+    this.edit(s => this.shapeService.shiftShape(s, dx, dy));
   }
 
-  saveShape() {
-    this.storageService.storeShape(this.shape);
-  
+  flip(axis: 'horizontal' | 'vertical') {
+    this.edit(s => this.shapeService.flipShape(s, axis));
   }
 
+  invert() {
+    this.edit(s => ({ ...s, pattern: this.shapeService.toSparsePattern(this.shapeService.invertShape(s).pattern) }));
+  }
+
+  clear() {
+    if (this.activeCount() === 0) return;
+    this.dialogs
+      .showBooleanDialog('Clear shape?', 'All pixels will be switched off.', { confirmLabel: 'Clear' })
+      .subscribe(ok => ok && this.edit(s => ({ ...s, pattern: [] })));
+  }
+
+  // --- persistence -----------------------------------------------------------------------------
+
+  save() {
+    const shape = this.shape();
+    if (!shape) return;
+    const error = this.nameError();
+    if (error) {
+      this.snackBar.open(error, undefined, { duration: 3000 });
+      return;
+    }
+
+    const toSave: Shape = {
+      ...shape,
+      id: shape.id || createId('shape'),
+      name: shape.name.trim(),
+      pattern: this.shapeService.toSparsePattern(shape.pattern),
+    };
+    this.storage.saveShape(toSave);
+    this.shape.set(toSave);
+    this.savedSnapshot.set(JSON.stringify(toSave));
+    this.snackBar.open(`Saved "${toSave.name}"`, undefined, { duration: 2000 });
+
+    if (this.isNew()) {
+      this.router.navigate(['/shapes', toSave.id], { replaceUrl: true });
+    }
+  }
+
+  delete() {
+    const shape = this.shape();
+    if (!shape) return;
+    this.dialogs
+      .showBooleanDialog(`Delete "${shape.name}"?`, 'This cannot be undone.', { confirmLabel: 'Delete' })
+      .subscribe(ok => {
+        if (!ok) return;
+        if (shape.id) this.storage.deleteShape(shape.id);
+        this.savedSnapshot.set(JSON.stringify(shape)); // nothing left to lose
+        this.router.navigate(['/shapes']);
+      });
+  }
+
+  // --- keyboard --------------------------------------------------------------------------------
+
+  onKeydown(event: KeyboardEvent) {
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') {
+      event.preventDefault();
+      this.save();
+      return;
+    }
+    const target = event.target as HTMLElement | null;
+    if (target?.closest('input, textarea')) return;
+    if (!event.altKey) return;
+    const moves: Record<string, [number, number]> = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
+    const move = moves[event.key];
+    if (move) {
+      event.preventDefault();
+      this.shift(...move);
+    }
+  }
+
+  onBeforeUnload(event: BeforeUnloadEvent) {
+    if (this.dirty()) event.preventDefault();
+  }
+
+  private uniqueName(base: string): string {
+    let name = base;
+    let n = 2;
+    while (this.storage.isShapeNameTaken(name)) name = `${base} ${n++}`;
+    return name;
+  }
 }

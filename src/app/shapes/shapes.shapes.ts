@@ -1,9 +1,11 @@
 import { Shape } from "../core/interfaces/shape.interface";
 
 
-export const Shapes: Shape[] = [
+/** Shapes that are seeded into a fresh browser on first start. */
+export const DEFAULT_SHAPES: Shape[] = [
     {
         id: 'house',
+        name: 'House',
         description: 'A depiction of a simple house',
         size: { width: 7, height: 9 },
         pattern: [
@@ -59,6 +61,7 @@ export const Shapes: Shape[] = [
     },
     {
         id: 'heart_filled',
+        name: 'Heart',
         description: 'A depiction of a filled heart',
         size: { width: 7, height: 7 },
         pattern: [
@@ -104,6 +107,7 @@ export const Shapes: Shape[] = [
     },
     {
         id: 'star',
+        name: 'Star',
         description: 'A depiction of a simple eight angled star',
         size: { width: 7, height: 7 },
         pattern: [
@@ -143,6 +147,7 @@ export const Shapes: Shape[] = [
     },
     {
         id: 'plusSign',
+        name: 'Plus',
         description: 'A depiction of a plus sign',
         size: { width: 7, height: 7 },
         pattern: [
@@ -169,6 +174,7 @@ export const Shapes: Shape[] = [
         inverted: false
     }, {
         id: 'diamond',
+        name: 'Diamond',
         description: 'A depiction of a diamond shape',
         size: { width: 7, height: 7 },
         pattern: [

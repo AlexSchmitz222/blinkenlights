@@ -1,1 +1,36 @@
-<router-outlet></router-outlet>
+@if (showChrome()) {
+  <header class="topbar">
+    <a class="brand" routerLink="/" aria-label="Blinkenlights home">
+      <span class="logo" aria-hidden="true"><i></i><i class="on"></i><i class="on"></i><i></i><i class="on"></i><i></i></span>
+      <span>blinkenlights</span>
+    </a>
+    <nav>
+      <a routerLink="/shows" routerLinkActive="active">
+        <mat-icon svgIcon="movie-open-outline" />
+        <span>Shows</span>
+      </a>
+      <a routerLink="/shapes" routerLinkActive="active">
+        <mat-icon svgIcon="shape-outline" />
+        <span>Shapes</span>
+      </a>
+    </nav>
+    <span class="spacer"></span>
+    <button matIconButton [matMenuTriggerFor]="themeMenu" matTooltip="Theme" aria-label="Choose theme">
+      <mat-icon [svgIcon]="themeIcon()" />
+    </button>
+    <mat-menu #themeMenu="matMenu" xPosition="before">
+      @for (option of themeOptions; track option.mode) {
+        <button mat-menu-item (click)="theme.setMode(option.mode)">
+          <mat-icon [svgIcon]="option.icon" />
+          <span>{{ option.label }}</span>
+          @if (theme.mode() === option.mode) {
+            <mat-icon svgIcon="check" class="menu-check" />
+          }
+        </button>
+      }
+    </mat-menu>
+  </header>
+}
+<main [class.with-chrome]="showChrome()">
+  <router-outlet />
+</main>

@@ -1,47 +1,51 @@
-<div class="container">
-  <mat-toolbar>
-    <button mat-stroked-button routerLink="/">back</button>
-    &nbsp;
-    <h2>Shape List</h2>
+<div class="page">
+  <header class="page-header">
+    <h1>Shapes</h1>
+    <span class="chip">{{ items().length }}</span>
     <span class="spacer"></span>
-    <button mat-stroked-button routerLink="/shapes/new">Add New Shape</button>
-  </mat-toolbar>
-  <div class="content">
-    @for (shape of shapeList; track shape) {
-      <mat-card appearance="outlined">
-        <mat-card-header>
-          <mat-card-title>{{shape.id}}</mat-card-title>
-          <mat-chip-set>
-            <mat-chip disableRipple>Size: {{shape.size.width}} x {{shape.size.height}}</mat-chip>
-          </mat-chip-set>
-          <mat-card-title></mat-card-title>
-        </mat-card-header>
-        <mat-card-content>
-          <div>
-            <span><u>Description:</u></span>
-            <br>
-              <div>{{shape.description}}</div>
-            </div>
-            <div>
-              <span><u>Shape Pixels:</u></span>
-              <br>
-                <div class="shapePreview">
-                  @for (row of shape.pixels; track row) {
-                    <div class="pixelRow">
-                      @for (Pixel of row; track Pixel) {
-                        <div class="pixel" [class.on]="Pixel.active"
-                          [class.off]="!Pixel.active">
-                        </div>
-                      }
-                    </div>
-                  }
-                </div>
-              </div>
-            </mat-card-content>
-            <mat-card-actions align="end">
-              <button mat-stroked-button [routerLink]="['/shapes', shape.id]">Edit</button>
-            </mat-card-actions>
-          </mat-card>
-        }
-      </div>
+    <a matButton="filled" routerLink="/shapes/new">
+      <mat-icon svgIcon="plus" />
+      New shape
+    </a>
+  </header>
+
+  @if (items().length === 0) {
+    <div class="panel empty-state">
+      <p>No shapes yet.</p>
+      <a matButton="outlined" routerLink="/shapes/new">Draw your first shape</a>
     </div>
+  } @else {
+    <ul class="cards">
+      @for (item of items(); track item.shape.id) {
+        <li class="panel card">
+          <a class="preview" [routerLink]="['/shapes', item.shape.id]" [attr.aria-label]="'Edit ' + item.shape.name">
+            <app-pixel-grid [grid]="item.grid" fit="contain" />
+          </a>
+          <div class="meta">
+            <div class="title-row">
+              <a class="name" [routerLink]="['/shapes', item.shape.id]">{{ item.shape.name }}</a>
+              <button matIconButton [matMenuTriggerFor]="menu" aria-label="More actions">
+                <mat-icon svgIcon="dots-vertical" />
+              </button>
+              <mat-menu #menu="matMenu" xPosition="before">
+                <a mat-menu-item [routerLink]="['/shapes', item.shape.id]">
+                  <mat-icon svgIcon="pencil" />Edit
+                </a>
+                <button mat-menu-item (click)="duplicate(item.shape)">
+                  <mat-icon svgIcon="content-copy" />Duplicate
+                </button>
+                <button mat-menu-item (click)="delete(item.shape)">
+                  <mat-icon svgIcon="delete" />Delete
+                </button>
+              </mat-menu>
+            </div>
+            <span class="chip">{{ item.shape.size.width }} × {{ item.shape.size.height }}</span>
+            @if (item.shape.description) {
+              <p class="description muted">{{ item.shape.description }}</p>
+            }
+          </div>
+        </li>
+      }
+    </ul>
+  }
+</div>

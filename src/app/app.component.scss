@@ -1,0 +1,99 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  height: 56px;
+  padding: 0 12px 0 16px;
+  background: var(--bl-surface);
+  border-bottom: 1px solid var(--bl-border);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--bl-text);
+  text-decoration: none;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+// tiny 3×2 light logo
+.logo {
+  display: grid;
+  grid-template-columns: repeat(3, 6px);
+  gap: 2px;
+  padding: 4px;
+  background: var(--bl-stage-bg);
+  border-radius: 4px;
+
+  i {
+    width: 6px;
+    height: 6px;
+    border-radius: 1.5px;
+    background: var(--bl-light-off);
+  }
+
+  i.on {
+    background: var(--bl-light-on);
+    box-shadow: 0 0 4px var(--bl-light-glow);
+  }
+}
+
+nav {
+  display: flex;
+  gap: 4px;
+
+  a {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    border-radius: var(--bl-radius);
+    color: var(--bl-text-muted);
+    text-decoration: none;
+    font-weight: 500;
+
+    mat-icon {
+      width: 18px;
+      height: 18px;
+    }
+
+    &:hover {
+      color: var(--bl-text);
+      background: var(--bl-surface-2);
+    }
+
+    &.active {
+      color: var(--bl-accent);
+      background: var(--bl-accent-soft);
+    }
+  }
+}
+
+.menu-check {
+  margin-left: 16px;
+  margin-right: 0;
+}
+
+main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+@media (max-width: 520px) {
+  nav a span {
+    display: none;
+  }
+}

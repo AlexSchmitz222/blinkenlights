@@ -1,38 +1,58 @@
-import { Component, OnInit, ChangeDetectionStrategy, inject } from '@angular/core';
-import { Shape } from '../../core/interfaces/shape.interface';
-import { MatCardModule } from '@angular/material/card';
-import { MatChipsModule } from '@angular/material/chips';
-import { Shapes } from '../../shapes/shapes.shapes';
-
-import { Pixel } from '../../core/interfaces/pixel.interface';
-import { Grid } from '../../core/interfaces/grid.interface';
-import { MatButtonModule } from '@angular/material/button';
+import { Component, ChangeDetectionStrategy, inject, computed } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { MatToolbarModule } from '@angular/material/toolbar';
+import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { MatMenuModule } from '@angular/material/menu';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { Shape } from '../../core/interfaces/shape.interface';
 import { ShapeService } from '../../core/services/shape.service';
-import { GridService } from '../../core/services/grid.service';
 import { StorageService } from '../../core/services/storage.service';
+import { BasicDialogService } from '../../core/services/basic-dialog.service';
+import { PixelGridComponent } from '../../shared/pixel-grid/pixel-grid.component';
+import { createId } from '../../core/utils/id';
+
 @Component({
   selector: 'app-shape-list',
-  imports: [MatCardModule, MatChipsModule, MatButtonModule, RouterLink, MatToolbarModule, MatIconModule],
+  imports: [RouterLink, MatButtonModule, MatIconModule, MatMenuModule, MatTooltipModule, PixelGridComponent],
   templateUrl: './shape-list.component.html',
-  changeDetection: ChangeDetectionStrategy.Eager,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './shape-list.component.scss'
 })
-export class ShapeListComponent implements OnInit {
+export class ShapeListComponent {
   private shapeService = inject(ShapeService);
-  private gridService = inject(GridService);
-  private storageService = inject(StorageService);
+  private storage = inject(StorageService);
+  private dialogs = inject(BasicDialogService);
+  private snackBar = inject(MatSnackBar);
 
+  readonly items = computed(() =>
+    [...this.storage.shapes()]
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .map(shape => ({ shape, grid: this.shapeService.transformShapeToGrid(shape) })),
+  );
 
-  shapeList: Grid[] = [];
-
-  ngOnInit(): void {
-    this.storageService.getShapes().forEach((shape) => {
-      this.shapeList.push(this.shapeService.transformShapeToGrid(shape, shape.id, shape.description));
-    });
-
+  duplicate(shape: Shape) {
+    const copy: Shape = { ...structuredClone(shape), id: createId('shape'), name: this.copyName(shape.name) };
+    this.storage.saveShape(copy);
+    this.snackBar.open(`Created "${copy.name}"`, undefined, { duration: 2500 });
   }
 
+  delete(shape: Shape) {
+    this.dialogs
+      .showBooleanDialog(`Delete "${shape.name}"?`, 'This cannot be undone.', { confirmLabel: 'Delete' })
+      .subscribe(ok => {
+        if (!ok) return;
+        this.storage.deleteShape(shape.id);
+        this.snackBar.open(`Deleted "${shape.name}"`, 'Undo', { duration: 5000 })
+          .onAction()
+          .subscribe(() => this.storage.saveShape(shape));
+      });
+  }
+
+  private copyName(name: string): string {
+    let candidate = `${name} copy`;
+    let n = 2;
+    while (this.storage.isShapeNameTaken(candidate)) candidate = `${name} copy ${n++}`;
+    return candidate;
+  }
 }

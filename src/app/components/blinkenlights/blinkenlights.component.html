@@ -1,20 +1,12 @@
-<div class="container">
-  <mat-slide-toggle class="debugControls" labelPosition="before" [checked]="debug" (change)="debug = !debug">
-  </mat-slide-toggle>
-  @for (row of grid.pixels; track row) {
-    <div class="pixelRow">
-      @for (Pixel of row; track Pixel) {
-        <div class="pixel" [class.on]="Pixel.active" [class.off]="!Pixel.active"
-          [class.debug]="debug">
-          @if (debug) {
-            <span>
-              id:{{Pixel.id}}<br>
-              x:{{Pixel.position.x}}<br>
-              y:{{Pixel.position.y}}
-            </span>
-          }
-        </div>
-      }
-    </div>
-  }
+<div class="player">
+  <app-pixel-grid class="stage" [grid]="grid" fit="contain" [debug]="debug" />
+  <div class="controls">
+    <a matIconButton routerLink="/" matTooltip="Back" aria-label="Back">
+      <mat-icon svgIcon="arrow-left" />
+    </a>
+    <span class="spacer"></span>
+    <button matIconButton (click)="debug = !debug" [class.active]="debug" matTooltip="Show coordinates" aria-label="Toggle coordinates">
+      <mat-icon svgIcon="bug-outline" />
+    </button>
+  </div>
 </div>

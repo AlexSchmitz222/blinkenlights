@@ -2,7 +2,10 @@ import { Size } from "./grid.interface";
 import { Pixel } from "./pixel.interface";
 
 export interface Shape {
+    /** Stable identifier, never changes (shows reference shapes by id). */
     id: string;
+    /** Display name, freely editable. */
+    name: string;
     description: string;
     size: Size;
     pattern: Pixel[];
@@ -13,6 +16,7 @@ export interface Shape {
 export function createEmptyShape(): Shape {
     return {
         id: '',
+        name: '',
         description: '',
         size: { width: 0, height: 0 },
         pattern: [],

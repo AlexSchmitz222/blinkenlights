@@ -20,6 +20,7 @@ describe('DrawService', () => {
   // 2×2 L-shape with one explicitly-off pixel and one unlisted (transparent) pixel
   const shape: Shape = {
     id: 'l',
+    name: 'L',
     description: '',
     size: { width: 2, height: 2 },
     pattern: [

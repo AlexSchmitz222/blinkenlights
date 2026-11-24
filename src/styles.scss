@@ -1,89 +1,195 @@
-/* You can add global styles to this file, and also import other style files */
-$transitionTime: 0.3s;
-$offColor: #000;
-$onColor: rgb(239, 235, 216);
+@use '@angular/material' as mat;
+
+// ---------------------------------------------------------------------------
+// Fonts
+// ---------------------------------------------------------------------------
+@font-face {
+  font-family: 'JetBrains Mono';
+  src: url('/fonts/JetBrainsMono-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
 
 @font-face {
-    font-family: 'JetBrains Mono';
-    src: url('/fonts/JetBrainsMono-Regular.woff2');
-    font-weight: normal;
-    font-style: normal;
+  font-family: 'JetBrains Mono';
+  src: url('/fonts/JetBrainsMono-Medium.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
 }
 
-//html, body { height: 100%; }
+@font-face {
+  font-family: 'JetBrains Mono';
+  src: url('/fonts/JetBrainsMono-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+// ---------------------------------------------------------------------------
+// Theme
+// Light/dark is driven by `color-scheme` on <html>: the ThemeService sets it to
+// `light`, `dark`, or `light dark` (follow the OS). All colours below use
+// light-dark() so they switch automatically.
+// ---------------------------------------------------------------------------
+html {
+  color-scheme: light dark;
+
+  @include mat.theme((
+    color: (
+      primary: mat.$orange-palette,
+      tertiary: mat.$yellow-palette,
+      theme-type: color-scheme,
+    ),
+    typography: (
+      plain-family: 'JetBrains Mono, ui-monospace, monospace',
+      brand-family: 'JetBrains Mono, ui-monospace, monospace',
+      bold-weight: 700,
+      medium-weight: 500,
+      regular-weight: 400,
+    ),
+    density: 0,
+  ));
+
+  // Flat look: no shadows on cards, toolbars and menus.
+  @include mat.card-overrides((
+    elevated-container-elevation: none,
+    outlined-outline-color: var(--bl-border),
+  ));
+  @include mat.toolbar-overrides((
+    container-background-color: var(--bl-surface),
+  ));
+
+  // --- App chrome (follows the theme) ---
+  --bl-bg: light-dark(#f6f5f2, #111112);
+  --bl-surface: light-dark(#ffffff, #18181a);
+  --bl-surface-2: light-dark(#efeee9, #202023);
+  --bl-border: light-dark(#e1dfd8, #2c2c30);
+  --bl-border-strong: light-dark(#c9c6bc, #3d3d42);
+  --bl-text: light-dark(#1c1b19, #ebe9e4);
+  --bl-text-muted: light-dark(#6d6b66, #9b9993);
+  --bl-accent: light-dark(#b55f00, #ffb44d);
+  --bl-accent-soft: light-dark(#fbe9d2, #3a2a14);
+  --bl-danger: light-dark(#b3261e, #f2b8b5);
+  --bl-radius: 8px;
+  --bl-radius-sm: 4px;
+
+  // --- Stage (the "screen" with the lights). Always dark, in both themes. ---
+  --bl-stage-bg: #0a0a0b;
+  --bl-stage-border: light-dark(#d6d3ca, #2c2c30);
+  --bl-light-off: #1b1b1e;
+  --bl-light-on: #ffe3a3;
+  --bl-light-glow: rgba(255, 196, 92, 0.55);
+  --bl-facade: #2a2622;
+  --bl-facade-frame: #191614;
+}
+
+// ---------------------------------------------------------------------------
+// Base
+// ---------------------------------------------------------------------------
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
 body {
-    margin: 0;
-    padding: 0;
-    font-family: Roboto, "Helvetica Neue", sans-serif;
-    background-color: #000;
+  height: 100%;
 }
 
-* {
-    font-family: 'JetBrains Mono' !important;
+body {
+  margin: 0;
+  background: var(--bl-bg);
+  color: var(--bl-text);
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
 }
 
-.container {
-    width: 100vw;
-    min-height: 100vh;
-    background-color: #FFF;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+h1,
+h2,
+h3 {
+  margin: 0;
+  font-weight: 500;
+  letter-spacing: -0.01em;
 }
 
-mat-toolbar:not(.actionBar) {
-    position: sticky;
-    top: 0;
-    z-index: 1000;
+a {
+  color: var(--bl-accent);
 }
 
+// ---------------------------------------------------------------------------
+// Small shared utilities
+// ---------------------------------------------------------------------------
 .spacer {
-    flex: 1 1 auto;
+  flex: 1 1 auto;
 }
 
-.content {
-    width: 100%;
-    height: 100%;
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
+.muted {
+  color: var(--bl-text-muted);
 }
 
-.pixelRow {
-    display: flex;
+.page {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px 16px 48px;
 }
 
-.pixel {
-    margin: 0px;
-    width: 30px;
-    height: 30px;
-    background-color: magenta;
-    border-radius: 10px;
-    font-size: 8px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+.page-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+
+  h1 {
+    font-size: 20px;
+  }
 }
 
-.pixel.off {
-    background-color: $offColor;
-    color: invert($offColor);
-    transition: $transitionTime;
+.panel {
+  background: var(--bl-surface);
+  border: 1px solid var(--bl-border);
+  border-radius: var(--bl-radius);
 }
 
-.pixel.on {
-    background-color: $onColor;
-    color: invert($onColor);
-    transition: background-color $transitionTime;
+.panel-title {
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--bl-text-muted);
+  margin: 0 0 8px;
 }
 
-button.yes {
-    color: green !important;
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border: 1px solid var(--bl-border);
+  border-radius: 999px;
+  font-size: 12px;
+  color: var(--bl-text-muted);
+  white-space: nowrap;
 }
 
-button.no {
-    color: red !important;
+.empty-state {
+  padding: 48px 16px;
+  text-align: center;
+  color: var(--bl-text-muted);
 }
 
+kbd {
+  font-family: inherit;
+  font-size: 11px;
+  padding: 1px 5px;
+  border: 1px solid var(--bl-border-strong);
+  border-bottom-width: 2px;
+  border-radius: var(--bl-radius-sm);
+  background: var(--bl-surface-2);
+}

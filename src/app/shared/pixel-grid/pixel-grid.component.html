@@ -1,0 +1,29 @@
+<div class="inner">
+  <div
+    #gridEl
+    class="grid"
+    role="img"
+    [attr.aria-label]="'Light grid, ' + width() + ' by ' + height()"
+    [style.--w]="width()"
+    [style.--h]="height()"
+    (pointerdown)="onPointerDown($event)"
+    (pointermove)="onPointerMove($event)"
+    (pointerup)="onPointerUp()"
+    (pointercancel)="onPointerUp()"
+    (contextmenu)="interactive() && $event.preventDefault()">
+    @for (cell of cells(); track $index) {
+      <div
+        class="cell"
+        [class.on]="cell.on"
+        [class.ghost]="cell.ghost && !cell.on"
+        [style.grid-area]="(cell.y + 1) + ' / ' + (cell.x + 1)">
+        @if (debug()) {
+          <span class="coords">{{ cell.x }},{{ cell.y }}</span>
+        }
+      </div>
+    }
+    @for (hl of visibleHighlights(); track $index) {
+      <div class="highlight" [class.hover]="hl.kind === 'hover'" [style.grid-area]="hl.area"></div>
+    }
+  </div>
+</div>

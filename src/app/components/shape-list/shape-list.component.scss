@@ -1,59 +1,69 @@
-.container {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    background-color: #FFF;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
+.cards {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
 }
 
-mat-card {
-    width: 50%;
-    margin: 10px auto 10px auto;
-    background-color: #FFF;
+.card {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: border-color 120ms;
+
+  &:hover {
+    border-color: var(--bl-border-strong);
+  }
 }
 
-mat-card-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0px;
-    padding-bottom: 8px;
-    border-bottom: 1px solid #666;
-    margin: 8px;
+.preview {
+  display: block;
+  height: 180px;
+  padding: 12px;
+  background: var(--bl-stage-bg);
+
+  app-pixel-grid {
+    border: none;
+    --bl-stage-pad: 0px;
+  }
 }
 
-mat-card-content {
-    display: inline-flex;
-    width: 100%;
-    >* {
-        flex: 1;
-    }
+.meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 8px 8px 14px 14px;
+  border-top: 1px solid var(--bl-border);
 }
 
-mat-card-content div:not(.pixel):not(.pixelRow) {
-    margin: 8px;
+.title-row {
+  display: flex;
+  align-items: center;
+  width: 100%;
 }
 
+.name {
+  flex: 1;
+  color: var(--bl-text);
+  text-decoration: none;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 
-mat-card-actions {
-    padding: 0px;
-    padding-bottom: 8px;
-    border-top: 1px solid #666;
-    margin: 8px;
-    padding-top: 8px;
+  &:hover {
+    color: var(--bl-accent);
+  }
 }
 
-mat-card-actions div {
-    background-color: #ccc;
-    height: 30px;
-    border-radius: 15px;
-    width: 100px;
-}
-
-.pixel {
-    border: 1px solid black;
+.description {
+  margin: 0;
+  font-size: 12px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
