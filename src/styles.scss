@@ -75,12 +75,14 @@ html {
   --bl-radius: 8px;
   --bl-radius-sm: 4px;
 
-  // --- Stage (the "screen" with the lights). Always dark, in both themes. ---
-  --bl-stage-bg: #0a0a0b;
+  // --- Stage (the "screen" with the lights) ---
+  // Follows the theme in lists and editors. The player sets `color-scheme: dark` on itself,
+  // so it always gets the dark values, like the real house front at night.
+  --bl-stage-bg: light-dark(#ecebe6, #0a0a0b);
   --bl-stage-border: light-dark(#d6d3ca, #2c2c30);
-  --bl-light-off: #1b1b1e;
-  --bl-light-on: #ffe3a3;
-  --bl-light-glow: rgba(255, 196, 92, 0.55);
+  --bl-light-off: light-dark(#dcdad2, #1b1b1e);
+  --bl-light-on: light-dark(#e08a00, #ffe3a3);
+  --bl-light-glow: light-dark(transparent, rgba(255, 196, 92, 0.55));
   --bl-facade: #2a2622;
   --bl-facade-frame: #191614;
 }

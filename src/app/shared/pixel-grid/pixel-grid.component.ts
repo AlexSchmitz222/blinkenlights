@@ -17,7 +17,7 @@ export interface PixelPointerEvent extends Position {
 }
 
 /**
- * Renders a {@link Grid} as a "screen" of lights. Always dark, regardless of the app theme.
+ * Renders a {@link Grid} as a "screen" of lights. Follows the theme; force dark with `color-scheme: dark` on a parent (the player does).
  *
  * Sizing:
  * - `fit="width"` (default): fills the available width, height follows the grid's aspect ratio.

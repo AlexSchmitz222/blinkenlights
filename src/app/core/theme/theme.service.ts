@@ -5,7 +5,7 @@ export type ThemeMode = 'system' | 'light' | 'dark';
 const STORAGE_KEY = 'blinkenlights.theme';
 
 /**
- * Light/dark mode for the app chrome. The stage with the lights is always dark.
+ * Light/dark mode for the app. The player always stays dark.
  * 'system' follows the OS setting; the choice is remembered per browser.
  */
 @Injectable({ providedIn: 'root' })
