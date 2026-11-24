@@ -1,19 +1,15 @@
-import { Grid } from "../interfaces/grid.interface";
-import { Shape } from "../interfaces/shape.interface";
+import { Position, Size } from "../interfaces/grid.interface";
 
 export class ShapePixelOutOfBoundsError extends Error {
-    public shapeSize: { width: number, height: number };
-    public pixelPosition: { x: number, y: number };
-    constructor(
-        shapeType: string,
-        shapeSize: Shape['size'],
-        position: { x: number, y: number }
-    ) {
-        const message = shapeType
-        super(message);
-        this.name = this.constructor.name;
+    public shapeType: string;
+    public shapeSize: Size;
+    public pixelPosition: Position;
+
+    constructor(shapeType: string, shapeSize: Size, pixelPosition: Position) {
+        super(shapeType);
+        this.name = 'ShapePixelOutOfBoundsError';
+        this.shapeType = shapeType;
         this.shapeSize = { width: shapeSize.width, height: shapeSize.height };
-        this.pixelPosition = position;
-        this.stack = (new Error()).stack;
+        this.pixelPosition = { x: pixelPosition.x, y: pixelPosition.y };
     }
 }

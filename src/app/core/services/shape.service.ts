@@ -1,189 +1,87 @@
 import { Injectable } from '@angular/core';
-import { Shapes } from '../../shapes/shapes.shapes';
 import { Shape } from '../interfaces/shape.interface';
-import { Grid } from '../interfaces/grid.interface';
+import { Grid, Size } from '../interfaces/grid.interface';
 import { Pixel } from '../interfaces/pixel.interface';
 
+/** Pure helpers to convert and transform shapes. None of these mutate their input. */
 @Injectable({
   providedIn: 'root'
 })
-
 export class ShapeService {
-  shapes: Shape[] = Shapes;
-  constructor() { }
 
-  getShape(shapeId: string): Shape | undefined {
-    return this.shapes.find(shape => shape.id === shapeId);
-  }
-
-  getShapes(): Shape[] {
-    return this.shapes
-  }
-
-  getShapeRequiredSize(shape: Shape): {width: number, height: number} {
-    let maxX = 0;
-    let maxY = 0;
-
-    shape.pattern.forEach(pixel => {
-      maxX = Math.max(maxX, pixel.position.x + 1);
-      maxY = Math.max(maxY, pixel.position.y + 1);
-    });
-
-    return { width: maxX, height: maxY };
-  }
-
-  invertShapePattern(shape: Shape, inverted?: boolean): Shape {
-    shape.pattern = this.transformPixelPatternAddNonActivePixels(shape.pattern, { width: shape.size.width, height: shape.size.height });
-    if (inverted !== undefined) {
-      shape.inverted = inverted;
+  /** Smallest size that still contains every active pixel of the shape. */
+  getShapeRequiredSize(shape: Shape): Size {
+    let width = 0;
+    let height = 0;
+    for (const pixel of shape.pattern) {
+      if (!pixel.active) continue;
+      width = Math.max(width, pixel.position.x + 1);
+      height = Math.max(height, pixel.position.y + 1);
     }
-
-    shape.pattern.forEach((pixel) => {
-      pixel.active = !pixel.active;
-    })
-
-    return shape;
+    return { width, height };
   }
 
-  generateShapeWithNonActivePixels(shape: Shape): Shape {
-
-    let pattern: Pixel[] = [];
-    let count: number = 0;
-    for (let shapeHeight = 0; shapeHeight < shape.size.height; shapeHeight++) {
-      const row: Pixel[] = [];
-      for (let shapeWidth = 0; shapeWidth < shape.size.width; shapeWidth++) {
-        const patternPixel = shape.pattern.find(p => p.position.x === shapeWidth && p.position.y === shapeHeight);
-        pattern.push({
-          id: count.toString(),
-          position: {
-            x: shapeWidth,
-            y: shapeHeight
-          },
-          active: patternPixel ? patternPixel.active : false
-        });
-        count++
+  /** Returns a dense pattern with exactly one pixel per cell of `size` (missing cells become inactive). */
+  toDensePattern(pattern: Pixel[], size: Size): Pixel[] {
+    const lookup = this.lookup(pattern);
+    const dense: Pixel[] = [];
+    for (let y = 0; y < size.height; y++) {
+      for (let x = 0; x < size.width; x++) {
+        dense.push({ position: { x, y }, active: lookup.get(`${x},${y}`) ?? false });
       }
     }
+    return dense;
+  }
 
+  /** Returns only the active pixels of a pattern (the compact form used for storage). */
+  toSparsePattern(pattern: Pixel[]): Pixel[] {
+    return pattern
+      .filter(pixel => pixel.active)
+      .map(pixel => ({ position: { x: pixel.position.x, y: pixel.position.y }, active: pixel.active }));
+  }
+
+  /** Flips every pixel inside the shape's bounds. */
+  invertShape(shape: Shape): Shape {
     return {
-      id: shape.id,
-      description: shape.description,
-      size: {
-        width: shape.size.width,
-        height: shape.size.height
-      },
-      pattern: pattern,
-      inverted: shape.inverted
-    }
+      ...shape,
+      size: { ...shape.size },
+      pattern: this.toDensePattern(shape.pattern, shape.size).map(pixel => ({ ...pixel, active: !pixel.active })),
+      inverted: !shape.inverted,
+    };
   }
 
-  transformPixelPatternAddNonActivePixels(pattern: Pixel[], size: { width: number, height: number }): Pixel[] {
-    let pixelPattern: Pixel[] = [];
-    let count: number = 0;
-    for (let shapeHeight = 0; shapeHeight < size.height; shapeHeight++) {
+  transformShapeToGrid(shape: Shape, gridId: string = shape.id, gridDescription: string = shape.description): Grid {
+    const lookup = this.lookup(shape.pattern);
+    const pixels: Pixel[][] = [];
+    let count = 0;
+    for (let y = 0; y < shape.size.height; y++) {
       const row: Pixel[] = [];
-      for (let shapeWidth = 0; shapeWidth < size.width; shapeWidth++) {
-        const patternPixel = pattern.find(p => p.position.x === shapeWidth && p.position.y === shapeHeight);
-        pixelPattern.push({
-          id: count.toString(),
-          position: {
-            x: shapeWidth,
-            y: shapeHeight
-          },
-          active: patternPixel ? patternPixel.active : false
-        });
-        count++
-      }
-    }
-
-    return pixelPattern;
-  }
-
-  transformPixelPatternRemoveNonActivePixels(pattern: Pixel[]): Pixel[] {
-    pattern.forEach((pixel, index) => {
-      if (!pixel.active) {
-        pattern.slice(index, 1);
-      }
-    })
-
-    return pattern;
-  }
-
-  transform1DPixelPatternTo2D(pattern: Pixel[], size: { width: number, height: number }): Pixel[][] {
-    let pixels: Pixel[][] = [];
-    let count: number = 0;
-    for (let shapeHeight = 0; shapeHeight < size.height; shapeHeight++) {
-      const row: Pixel[] = [];
-      for (let shapeWidth = 0; shapeWidth < size.width; shapeWidth++) {
-        const patternPixel = pattern.find(p => p.position.x === shapeWidth && p.position.y === shapeHeight);
-        row.push({
-          id: count.toString(),
-          position: {
-            x: shapeWidth,
-            y: shapeHeight
-          },
-          active: patternPixel ? patternPixel.active : false
-        });
-        count++
+      for (let x = 0; x < shape.size.width; x++) {
+        row.push({ id: (count++).toString(), position: { x, y }, active: lookup.get(`${x},${y}`) ?? false });
       }
       pixels.push(row);
     }
 
-    return pixels;
-  }
-
-  transform2DPixelPatternTo1D(pixels: Pixel[][], includeNonActive: boolean): { pattern: Pixel[], size: { width: number, height: number } } {
-    let pattern: Pixel[] = [];
-    let patternWidth = pixels[0]?.length || 0;
-    let patternHeight = pixels.length;
-
-    for (let pHeight = 0; pHeight < patternHeight; pHeight++) {
-      for (let pWidth = 0; pWidth < patternWidth; pWidth++) {
-        let pixel = pixels[pHeight][pWidth];
-        if (includeNonActive || pixel.active) {
-          pattern.push({
-            position: {
-              x: pWidth,
-              y: pHeight
-            },
-            active: pixel.active
-          })
-        }
-      }
-    }
-    return {
-      pattern: pattern,
-      size: {
-        width: patternWidth,
-        height: patternHeight
-      }
-    }
-  }
-
-  transformShapeToGrid(shape: Shape, gridId: string, gridDescription?: string): Grid {
     return {
       id: gridId,
       description: gridDescription,
-      size: {
-        width: shape.size.width,
-        height: shape.size.height
-      },
-      pixels: this.transform1DPixelPatternTo2D(shape.pattern, { width: shape.size.width, height: shape.size.height }),
-      inverted: shape.inverted
-    }
-
+      size: { width: shape.size.width, height: shape.size.height },
+      pixels,
+      inverted: shape.inverted,
+    };
   }
 
   transformGridToShape(grid: Grid, shapeId: string, shapeDescription: string): Shape {
     return {
       id: shapeId,
       description: shapeDescription,
-      size: {
-        width: grid.size.width,
-        height: grid.size.height
-      },
-      pattern: this.transform2DPixelPatternTo1D(grid.pixels, false).pattern,
-      inverted: grid.inverted
-    }
+      size: { width: grid.size.width, height: grid.size.height },
+      pattern: this.toSparsePattern(grid.pixels.flat()),
+      inverted: grid.inverted,
+    };
+  }
+
+  private lookup(pattern: Pixel[]): Map<string, Pixel['active']> {
+    return new Map(pattern.map(p => [`${p.position.x},${p.position.y}`, p.active]));
   }
 }

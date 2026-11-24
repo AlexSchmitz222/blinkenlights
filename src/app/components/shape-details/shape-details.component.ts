@@ -3,9 +3,9 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { ActivatedRoute } from '@angular/router';
 import { RouterLink } from '@angular/router';
-import { emptyGrid, Grid } from '../../core/interfaces/grid.interface';
+import { createEmptyGrid, Grid } from '../../core/interfaces/grid.interface';
 import { ShapeService } from '../../core/services/shape.service';
-import { emptyShape, Shape } from '../../core/interfaces/shape.interface';
+import { createEmptyShape, Shape } from '../../core/interfaces/shape.interface';
 
 import { MatInputModule } from '@angular/material/input';
 import { FormsModule } from '@angular/forms';
@@ -41,24 +41,21 @@ export class ShapeDetailsComponent implements OnInit {
 
   invert: boolean = false
   shapeId: string | null = null;
-  shape: Shape = emptyShape;
-  grid: Grid = emptyGrid;
+  shape: Shape = createEmptyShape();
+  grid: Grid = createEmptyGrid();
   ngOnInit() {
     this.shapeId = this.route.snapshot.paramMap.get('shapeId');
     if (this.shapeId == 'new') {
-      console.log(this.shape)
       this.shape.size.width = this.sliderParams.width.min;
       this.shape.size.height = this.sliderParams.height.min;
       this.shape.id = 'New Shape'
       this.shape.pattern.push({ position: { x: 0, y: 0 }, active: false })
       this.grid = this.shapeService.transformShapeToGrid(this.shape, this.shape.id)
-      console.log(this.shape)
     } else {
       if (this.shapeId != null) {
         let shape = this.storageService.getShape(this.shapeId);
         if (shape) {
-          console.log(`found shape with it ${shape.id}`)
-          this.shape = this.shapeService.generateShapeWithNonActivePixels(shape);
+          this.shape = shape;
           this.grid = this.shapeService.transformShapeToGrid(this.shape, this.shape.id)
         }
 
@@ -73,7 +70,6 @@ export class ShapeDetailsComponent implements OnInit {
     }
     this.grid = this.shapeService.transformShapeToGrid(this.shape, this.shape.id);
     this.updateMinGridSize()
-    console.log(this.shape);
   }
 
   updateMinGridSize() {
@@ -84,7 +80,7 @@ export class ShapeDetailsComponent implements OnInit {
 
   invertShape() {
     this.invert = !this.invert;
-    this.shape = this.shapeService.invertShapePattern(this.shape, this.invert);
+    this.shape = this.shapeService.invertShape(this.shape);
     this.grid = this.shapeService.transformShapeToGrid(this.shape, this.shape.id);
     this.updateMinGridSize();
   }
@@ -100,7 +96,7 @@ export class ShapeDetailsComponent implements OnInit {
   }
 
   changeShapeName() {
-    this.basicDialogService.showInputDialog("Change Shape Name", "text").subscribe((result) => {
+    this.basicDialogService.showInputDialog({ title: "Rename shape", label: "Name", value: this.shape.id }).subscribe((result) => {
       if (result) {
         this.shape.id = result;
         this.updateGrid(true);
@@ -109,9 +105,8 @@ export class ShapeDetailsComponent implements OnInit {
   }
 
   changeShapeDescription() {
-    this.basicDialogService.showTextareaDialog("Change Shape Description").subscribe((result) => {
+    this.basicDialogService.showInputDialog({ title: "Edit description", label: "Description", value: this.shape.description, multiline: true }).subscribe((result) => {
       if (result) {
-        console.log(`Shape description changed to: ${result}`);
         this.shape.description = result;
         this.updateGrid(true);
       }

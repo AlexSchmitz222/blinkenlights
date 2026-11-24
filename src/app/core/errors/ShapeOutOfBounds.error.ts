@@ -1,26 +1,19 @@
-import { Grid } from "../interfaces/grid.interface";
-import { Shape } from "../interfaces/shape.interface";
+import { Position, Size } from "../interfaces/grid.interface";
 
 export class ShapeOutOfBoundsError extends Error {
-  public gridSize: { width: number, height: number };
-  public position: { x: number, y: number };
-  public shapeSize?: { width: number, height: number };
-  public position2?: { x: number, y: number };
+    public shapeType: string;
+    public gridSize: Size;
+    public position: Position;
+    public shapeSize?: Size;
+    public position2?: Position;
 
-  constructor(
-    shapeType: string,
-    gridSize: Grid['size'],
-    position: { x: number, y: number },
-    shapeSize?: Shape['size'],
-    position2?: { x: number, y: number }
-  ) {
-    const message = shapeType;
-    super(message);
-    this.name = this.constructor.name;
-    this.gridSize = { width: gridSize.width, height: gridSize.height };
-    this.shapeSize = shapeSize ? { width: shapeSize.width, height: shapeSize.height } : undefined;
-    this.position = position;
-    this.position2 = position2 ? position2 : undefined;
-    this.stack = (new Error()).stack;
-  }
+    constructor(shapeType: string, gridSize: Size, position: Position, shapeSize?: Size, position2?: Position) {
+        super(shapeType);
+        this.name = 'ShapeOutOfBoundsError';
+        this.shapeType = shapeType;
+        this.gridSize = { width: gridSize.width, height: gridSize.height };
+        this.position = { x: position.x, y: position.y };
+        this.shapeSize = shapeSize ? { width: shapeSize.width, height: shapeSize.height } : undefined;
+        this.position2 = position2 ? { x: position2.x, y: position2.y } : undefined;
+    }
 }

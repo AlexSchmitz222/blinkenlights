@@ -1,43 +1,32 @@
 import { Injectable } from '@angular/core';
 import { Pixel } from '../interfaces/pixel.interface';
-import { Grid } from '../interfaces/grid.interface';
-import { Shape } from '../interfaces/shape.interface';
+import { Grid, Size } from '../interfaces/grid.interface';
 
 @Injectable({
   providedIn: 'root'
 })
 export class GridService {
 
-  constructor() { }
-
-  getGridSize(grid: Grid) {
-    return { width: grid.size.width, height: grid.size.height }
+  getGridSize(grid: Grid): Size {
+    return { width: grid.size.width, height: grid.size.height };
   }
 
-  getPixelData(grid: Grid, x: number, y: number) {
+  getPixelData(grid: Grid, x: number, y: number): Pixel {
     return grid.pixels[y][x];
   }
 
-  checkPixelIsOnGrid(grid: Grid, x: number, y: number) {
-    let gridSize = this.getGridSize(grid);
-    return x >= 0 && x <= gridSize.width && y >= 0 && y <= gridSize.height
+  /** True if (x, y) is a valid pixel coordinate, i.e. 0 ≤ x < width and 0 ≤ y < height. */
+  checkPixelIsOnGrid(grid: Grid, x: number, y: number): boolean {
+    return x >= 0 && x < grid.size.width && y >= 0 && y < grid.size.height;
   }
 
-  generateEmptyGrid(gridId: string, size: { width: number, height: number }, gridDescription?: string, inverted?: boolean) {
-    let pixels: Pixel[][] = [];
-    var count: number = 0;
-    for (let gridHeight = 0; gridHeight < size.height; gridHeight++) {
+  generateEmptyGrid(gridId: string, size: Size, gridDescription?: string, inverted = false): Grid {
+    const pixels: Pixel[][] = [];
+    let count = 0;
+    for (let y = 0; y < size.height; y++) {
       const row: Pixel[] = [];
-      for (let gridWidth = 0; gridWidth < size.width; gridWidth++) {
-        row.push({
-          id: count.toString(),
-          position: {
-            x: gridWidth,
-            y: gridHeight
-          },
-          active: false
-        });
-        count++
+      for (let x = 0; x < size.width; x++) {
+        row.push({ id: (count++).toString(), position: { x, y }, active: false });
       }
       pixels.push(row);
     }
@@ -45,13 +34,9 @@ export class GridService {
     return {
       id: gridId,
       description: gridDescription,
-      size: {
-        width: size.width,
-        height: size.height
-      },
-      pixels: pixels,
-      inverted: inverted ? inverted : false
-    }
+      size: { width: size.width, height: size.height },
+      pixels,
+      inverted
+    };
   }
 }
-

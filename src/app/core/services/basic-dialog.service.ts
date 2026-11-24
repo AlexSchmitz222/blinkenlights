@@ -1,296 +1,114 @@
-import { Component, Injectable, Input, Output, EventEmitter, ChangeDetectionStrategy, inject } from '@angular/core';
+import { Component, Injectable, ChangeDetectionStrategy, inject } from '@angular/core';
 import { Observable } from 'rxjs';
-import {
-  MatDialog,
-  MatDialogRef,
-  MAT_DIALOG_DATA,
-  MatDialogModule,
-} from '@angular/material/dialog';
-import { DateRange, MatDatepickerModule } from '@angular/material/datepicker';
-import { FormGroup, FormControl, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { MatCardModule } from '@angular/material/card';
+import { MatDialog, MatDialogRef, MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
+import { FormControl, Validators, ReactiveFormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatButtonModule } from '@angular/material/button';
 import { MatInputModule } from '@angular/material/input';
+
+export interface ConfirmDialogData {
+  title: string;
+  message: string;
+  confirmLabel?: string;
+  cancelLabel?: string;
+}
+
+export interface InputDialogData {
+  title: string;
+  label?: string;
+  value?: string;
+  type?: HTMLInputElement['type'];
+  /** Render a textarea instead of a single-line input. */
+  multiline?: boolean;
+  required?: boolean;
+}
+
 @Injectable({
   providedIn: 'root'
 })
-
 export class BasicDialogService {
-  private dialogRef = inject(MatDialog);
-
+  private dialog = inject(MatDialog);
 
   /**
-   * Stellt die Möglichkeit, einfache "Ja-Nein" Abfragen darzustellen
-   * @param title angezeigter Titel als String
-   * @param message angezeigte Meldung als String
-   * @returns Observable Objekt das nach folgendem Schema benutzt werden kann:
+   * Shows a simple yes/no question.
    * @example
-   *   showBooleanDialog('TITEL','MELDUNG').subscribe((result) => {
-   *    if (result) {
-   *       WENN DER BENUTZER MIT JA GEANTWORTET HAT
-   *    }});
+   * this.dialogs.showBooleanDialog('Delete shape?', 'This cannot be undone.').subscribe(ok => { if (ok) ... });
    */
-  showBooleanDialog(title: string, message: string): Observable<boolean> {
-    const dialog = this.dialogRef.open(BooleanDialogComponent, {
-      disableClose: true,
-      data: {
-        title: title,
-        message: message,
-      },
-    });
-    return dialog.afterClosed();
+  showBooleanDialog(title: string, message: string, labels: Pick<ConfirmDialogData, 'confirmLabel' | 'cancelLabel'> = {}): Observable<boolean> {
+    return this.dialog.open<ConfirmDialogComponent, ConfirmDialogData, boolean>(ConfirmDialogComponent, {
+      data: { title, message, ...labels },
+    }).afterClosed() as Observable<boolean>;
   }
 
-  showDatepickerDialog(
-    dateRange?: DateRange<Date>
-  ): Observable<DateRange<Date>> {
-    const dialog = this.dialogRef.open(DatepickerComponent, {
-      width: 'auto',
-      minWidth: '35%',
-      data: {
-        dateRange: dateRange,
-      },
-    });
-    return dialog.afterClosed();
+  /** Asks for a text value. Emits the entered value, or `null` when cancelled. */
+  showInputDialog(data: InputDialogData): Observable<string | null> {
+    return this.dialog.open<InputDialogComponent, InputDialogData, string | null>(InputDialogComponent, {
+      width: '420px',
+      maxWidth: '90vw',
+      data,
+    }).afterClosed() as Observable<string | null>;
   }
-
-  showTextareaDialog(title: string): Observable<string | null> {
-    const dialog = this.dialogRef.open(TextareaDialogComponent, {
-      disableClose: true,
-      width: 'auto',
-      data: {
-        title: title,
-      },
-    });
-    return dialog.afterClosed();
-  }
-
-  showInputDialog(title: string, type: HTMLInputElement['type']): Observable<string | null> {
-    const dialog = this.dialogRef.open(InputDialogComponent, {
-      disableClose: true,
-      width: 'auto',
-      data: {
-        title: title,
-        type: type,
-      },
-    });
-    return dialog.afterClosed();
-  }
-
 }
 
-//---BOOLEAN DIALOG---
 @Component({
-  selector: 'app-boolean-dialog',
+  selector: 'app-confirm-dialog',
   imports: [MatDialogModule, MatButtonModule],
-  changeDetection: ChangeDetectionStrategy.Eager,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <h1 mat-dialog-title>{{ data.title }}</h1>
+    <h2 mat-dialog-title>{{ data.title }}</h2>
+    <mat-dialog-content>{{ data.message }}</mat-dialog-content>
+    <mat-dialog-actions align="end">
+      <button matButton [mat-dialog-close]="false">{{ data.cancelLabel ?? 'Cancel' }}</button>
+      <button matButton="filled" [mat-dialog-close]="true" cdkFocusInitial>{{ data.confirmLabel ?? 'OK' }}</button>
+    </mat-dialog-actions>
+  `,
+})
+export class ConfirmDialogComponent {
+  data = inject<ConfirmDialogData>(MAT_DIALOG_DATA);
+}
 
+@Component({
+  selector: 'app-input-dialog',
+  imports: [MatDialogModule, ReactiveFormsModule, MatFormFieldModule, MatButtonModule, MatInputModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: `
+    <h2 mat-dialog-title>{{ data.title }}</h2>
     <mat-dialog-content>
-      {{ data.message }}
+      <form (ngSubmit)="save()" id="input-dialog-form">
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>{{ data.label ?? 'Value' }}</mat-label>
+          @if (data.multiline) {
+            <textarea matInput [formControl]="control" rows="4" cdkFocusInitial></textarea>
+          } @else {
+            <input matInput [type]="data.type ?? 'text'" [formControl]="control" cdkFocusInitial>
+          }
+          @if (control.hasError('required')) {
+            <mat-error>Required</mat-error>
+          }
+        </mat-form-field>
+      </form>
     </mat-dialog-content>
-
     <mat-dialog-actions align="end">
-      <button class="no" mat-stroked-button (click)="no()">
-        Nein
-      </button>
-      <button class="yes" mat-stroked-button (click)="yes()">
-        Ja
-      </button>
+      <button matButton type="button" [mat-dialog-close]="null">Cancel</button>
+      <button matButton="filled" type="submit" form="input-dialog-form">OK</button>
     </mat-dialog-actions>
   `,
-})
-
-export class BooleanDialogComponent {
-  private dialogRef = inject<MatDialogRef<BooleanDialogComponent>>(MatDialogRef);
-  data = inject(MAT_DIALOG_DATA);
-
-  hasAccepted: boolean = false;
-
-  yes() {
-    this.hasAccepted = true;
-    this.dialogRef.close(this.hasAccepted);
-  }
-
-  no() {
-    this.hasAccepted = false;
-    this.dialogRef.close(this.hasAccepted);
-  }
-}
-
-
-
-//---DATEPICKER DIALOG---
-@Component({
-  selector: 'app-datepicker-dialog',
-  imports: [MatDialogModule, MatDatepickerModule, MatCardModule, MatButtonModule],
-  template: `
-    <h1 mat-dialog-title>Datum auswählen:</h1>
-    <mat-dialog-content>
-      <mat-card>
-        <mat-calendar
-          [selected]="selectedRangeValue"
-          (selectedChange)="selectedChange($event)"
-        >
-        </mat-calendar>
-      </mat-card>
-      <br />
-    </mat-dialog-content>
-    <mat-dialog-actions align="end">
-      <button mat-stroked-button (click)="close()">
-        Ok
-      </button>
-    </mat-dialog-actions>
-  `,
-  changeDetection: ChangeDetectionStrategy.Eager,
-  styles: [],
-})
-export class DatepickerComponent {
-  private dialogRef = inject<MatDialogRef<DatepickerComponent>>(MatDialogRef);
-  data = inject(MAT_DIALOG_DATA);
-
-  ngOnInit() {
-    if (this.data.dateRange != undefined) {
-      this.selectedRangeValue = this.data.dateRange;
-    }
-  }
-  @Input() selectedRangeValue: DateRange<Date> | undefined;
-  @Output() selectedRangeValueChange = new EventEmitter<DateRange<Date>>();
-
-  selectedChange(m: any) {
-    if (!this.selectedRangeValue?.start || this.selectedRangeValue?.end) {
-      this.selectedRangeValue = new DateRange<Date>(m, null);
-    } else {
-      const start = this.selectedRangeValue.start;
-      const end = m;
-      if (end == start) {
-        this.selectedRangeValue = new DateRange<Date>(start, null);
-      } else {
-        if (end < start) {
-          this.selectedRangeValue = new DateRange<Date>(end, start);
-        } else {
-          this.selectedRangeValue = new DateRange<Date>(start, end);
-        }
-      }
-    }
-    this.selectedRangeValueChange.emit(this.selectedRangeValue);
-  } //Code geklaut bei hier: https://stackoverflow.com/questions/67484281/how-to-implement-ranged-inline-calendar-with-angular-material <-- Für Olli auch voll nett auf Deutsch :D
-
-  close() {
-    console.log(this.selectedRangeValue)
-    this.dialogRef.close(this.selectedRangeValue);
-  }
-}
-
-
-
-//---TEXTAREA DIALOG---
-@Component({
-  imports: [MatDialogModule, FormsModule, MatFormFieldModule, ReactiveFormsModule, MatButtonModule, MatInputModule],
-  changeDetection: ChangeDetectionStrategy.Eager,
-  template: `
-    <h1 mat-dialog-title>{{ data.title }}</h1>
-
-    <mat-dialog-content [formGroup]="textareaDialog">
-      <mat-form-field appearance="outline" style="width: 100%;">
-        <mat-label>Notiz</mat-label>
-        <textarea matInput formControlName="textarea"></textarea>
-      </mat-form-field>
-    </mat-dialog-content>
-
-    <mat-dialog-actions align="end">
-      <button class="no" mat-stroked-button (click)="abort()" tabIndex="0">
-        Abbrechen
-      </button>
-      <button class="yes" mat-stroked-button (click)="save()" tabIndex="1">
-        Ok
-      </button>
-    </mat-dialog-actions>
-  `,
-})
-export class TextareaDialogComponent {
-  private dialogRef = inject<MatDialogRef<TextareaDialogComponent>>(MatDialogRef);
-  data = inject(MAT_DIALOG_DATA);
-
-  textareaDialog: FormGroup;
-  constructor() {
-    this.textareaDialog = new FormGroup({
-      textarea: new FormControl('', Validators.required),
-    });
-  }
-
-  save() {
-    if (this.textareaDialog.valid) {
-      this.dialogRef.close(this.textareaDialog.value.textarea);
-    } else {
-      this.textareaDialog.markAllAsTouched();
-    }
-  }
-
-  abort() {
-    this.dialogRef.close(null);
-  }
-}
-
-//---INPUT DIALOG---
-@Component({
-  imports: [MatDialogModule, FormsModule, MatFormFieldModule, ReactiveFormsModule, MatButtonModule, MatInputModule],
-  template: `
-    <h1 mat-dialog-title>{{ data.title }}</h1>
-    
-    <mat-dialog-content [formGroup]="inputDialog">
-      <mat-form-field appearance="outline" style="width: 100%;">
-        <mat-label>Eingabe</mat-label>
-        <input matInput [type]="data.type" formControlName="input" class="mat-input-element">
-        @if (inputDialog.get('input')?.hasError('required')) {
-          <mat-error>
-            Eingabe erforderlich
-          </mat-error>
-        }
-      </mat-form-field>
-    </mat-dialog-content>
-    
-    <mat-dialog-actions align="end">
-      <button class="no" mat-stroked-button (click)="abort()" tabIndex="0">
-        Abbrechen
-      </button>
-      <button class="yes" mat-stroked-button (click)="save()" tabIndex="1">
-        Ok
-      </button>
-    </mat-dialog-actions>
-    `,
-  changeDetection: ChangeDetectionStrategy.Eager,
-  styles: [`
-    :host {
-      display: block;
-    }
-    .mat-form-field {
-      width: 100%;
-    }
-  `]
+  styles: `.full-width { width: 100%; margin-top: 8px; }`
 })
 export class InputDialogComponent {
-  private dialogRef = inject<MatDialogRef<InputDialogComponent>>(MatDialogRef);
-  data = inject(MAT_DIALOG_DATA);
+  data = inject<InputDialogData>(MAT_DIALOG_DATA);
+  private dialogRef = inject<MatDialogRef<InputDialogComponent, string | null>>(MatDialogRef);
 
-  inputDialog: FormGroup;
-  constructor() {
-    this.inputDialog = new FormGroup({
-      input: new FormControl('', Validators.required),
-    });
-  }
+  control = new FormControl(this.data.value ?? '', {
+    nonNullable: true,
+    validators: this.data.required === false ? [] : [Validators.required],
+  });
 
   save() {
-    if (this.inputDialog.valid) {
-      this.dialogRef.close(this.inputDialog.value.input);
+    if (this.control.valid) {
+      this.dialogRef.close(this.control.value.trim());
     } else {
-      this.inputDialog.markAllAsTouched();
+      this.control.markAsTouched();
     }
-  }
-
-  abort() {
-    this.dialogRef.close(null);
   }
 }

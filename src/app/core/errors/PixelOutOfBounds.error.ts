@@ -1,18 +1,13 @@
-import { Grid } from "../interfaces/grid.interface";
-import { Shape } from "../interfaces/shape.interface";
+import { Position, Size } from "../interfaces/grid.interface";
 
 export class PixelOutOfBoundsError extends Error {
-    public gridSize: { width: number, height: number };
-    public position: { x: number, y: number };
+    public gridSize: Size;
+    public position: Position;
 
-    constructor(
-        gridSize: Grid['size'],
-        position: { x: number, y: number },
-    ) {
-        const message = '';
-        super(message);
+    constructor(gridSize: Size, position: Position) {
+        super(`Pixel (${position.x}, ${position.y}) is outside the ${gridSize.width}×${gridSize.height} grid`);
+        this.name = 'PixelOutOfBoundsError';
         this.gridSize = { width: gridSize.width, height: gridSize.height };
-        this.position = position;
-        this.stack = (new Error()).stack;
+        this.position = { x: position.x, y: position.y };
     }
 }
