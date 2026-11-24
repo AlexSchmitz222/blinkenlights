@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { Pixel, pixelState } from '../interfaces/pixel.interface';
 import { GridService } from './grid.service';
 import { Grid } from '../interfaces/grid.interface';
@@ -11,8 +11,8 @@ import { ShapePixelOutOfBoundsError } from '../errors/ShapePixelOutOfBounds.erro
   providedIn: 'root'
 })
 export class DrawService {
+  private grid = inject(GridService);
 
-  constructor(private grid: GridService) { }
 
   drawPixel(grid: Grid, x: number, y: number, active: pixelState) {
     if (!this.grid.checkPixelIsOnGrid(grid, x, y)) {

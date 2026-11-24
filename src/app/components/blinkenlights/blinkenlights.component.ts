@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy, inject } from '@angular/core';
 
 import { DrawService } from '../../core/services/draw.service';
 import { Grid, emptyGrid } from '../../core/interfaces/grid.interface';
@@ -8,16 +8,16 @@ import { MatSlideToggleModule } from '@angular/material/slide-toggle';
   selector: 'app-blinkenlights',
   imports: [MatSlideToggleModule],
   templateUrl: './blinkenlights.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './blinkenlights.component.scss'
 })
 export class BlinkenlightsComponent implements OnInit {
+  private gridService = inject(GridService);
+  private drawService = inject(DrawService);
+
 
   grid: Grid = emptyGrid;
   debug: boolean = false;
-
-
-  constructor(private gridService: GridService,
-    private drawService: DrawService) { }
 
   ngOnInit() {
     this.grid = this.gridService.generateEmptyGrid('', { width: 39, height: 21 });

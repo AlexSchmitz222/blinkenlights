@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { RouterLink } from '@angular/router';
 import { StorageService } from '../../core/services/storage.service';
@@ -14,6 +14,7 @@ import { Shapes } from '../../shapes/shapes.shapes';
               <button mat-raised-button routerLink="/shapes">Shapes</button>
               <button mat-raised-button (click)="moveToLocalStorage()">Move to Local Storage</button>
             </div>`,
+  changeDetection: ChangeDetectionStrategy.Eager,
   styles: `
             div {
               position: absolute;
@@ -28,11 +29,8 @@ import { Shapes } from '../../shapes/shapes.shapes';
             }`
 })
 export class StartComponent {
-  constructor(private storageService: StorageService
-  ) {
+  private storageService = inject(StorageService);
 
-
-  }
   shapes = Shapes;
   moveToLocalStorage() {
     this.storageService.storeShapes(this.shapes);

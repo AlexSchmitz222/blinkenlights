@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 
 import { ShapeListComponent } from './shape-list.component';
 
@@ -8,7 +9,8 @@ describe('ShapeListComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [ShapeListComponent]
+      imports: [ShapeListComponent],
+      providers: [provideRouter([])]
     })
     .compileComponents();
 

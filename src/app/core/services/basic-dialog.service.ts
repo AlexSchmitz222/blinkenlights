@@ -1,11 +1,4 @@
-import {
-  Component,
-  Injectable,
-  Inject,
-  Input,
-  Output,
-  EventEmitter,
-} from '@angular/core';
+import { Component, Injectable, Input, Output, EventEmitter, ChangeDetectionStrategy, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import {
   MatDialog,
@@ -24,7 +17,8 @@ import { MatInputModule } from '@angular/material/input';
 })
 
 export class BasicDialogService {
-  constructor(private dialogRef: MatDialog) { }
+  private dialogRef = inject(MatDialog);
+
 
   /**
    * Stellt die Möglichkeit, einfache "Ja-Nein" Abfragen darzustellen
@@ -90,6 +84,7 @@ export class BasicDialogService {
 @Component({
   selector: 'app-boolean-dialog',
   imports: [MatDialogModule, MatButtonModule],
+  changeDetection: ChangeDetectionStrategy.Eager,
   template: `
     <h1 mat-dialog-title>{{ data.title }}</h1>
 
@@ -109,12 +104,10 @@ export class BasicDialogService {
 })
 
 export class BooleanDialogComponent {
-  hasAccepted: boolean = false;
+  private dialogRef = inject<MatDialogRef<BooleanDialogComponent>>(MatDialogRef);
+  data = inject(MAT_DIALOG_DATA);
 
-  constructor(
-    private dialogRef: MatDialogRef<BooleanDialogComponent>,
-    @Inject(MAT_DIALOG_DATA) public data: any
-  ) { }
+  hasAccepted: boolean = false;
 
   yes() {
     this.hasAccepted = true;
@@ -151,13 +144,13 @@ export class BooleanDialogComponent {
       </button>
     </mat-dialog-actions>
   `,
+  changeDetection: ChangeDetectionStrategy.Eager,
   styles: [],
 })
 export class DatepickerComponent {
-  constructor(
-    private dialogRef: MatDialogRef<DatepickerComponent>,
-    @Inject(MAT_DIALOG_DATA) public data: any
-  ) { }
+  private dialogRef = inject<MatDialogRef<DatepickerComponent>>(MatDialogRef);
+  data = inject(MAT_DIALOG_DATA);
+
   ngOnInit() {
     if (this.data.dateRange != undefined) {
       this.selectedRangeValue = this.data.dateRange;
@@ -196,6 +189,7 @@ export class DatepickerComponent {
 //---TEXTAREA DIALOG---
 @Component({
   imports: [MatDialogModule, FormsModule, MatFormFieldModule, ReactiveFormsModule, MatButtonModule, MatInputModule],
+  changeDetection: ChangeDetectionStrategy.Eager,
   template: `
     <h1 mat-dialog-title>{{ data.title }}</h1>
 
@@ -217,11 +211,11 @@ export class DatepickerComponent {
   `,
 })
 export class TextareaDialogComponent {
+  private dialogRef = inject<MatDialogRef<TextareaDialogComponent>>(MatDialogRef);
+  data = inject(MAT_DIALOG_DATA);
+
   textareaDialog: FormGroup;
-  constructor(
-    private dialogRef: MatDialogRef<TextareaDialogComponent>,
-    @Inject(MAT_DIALOG_DATA) public data: any
-  ) {
+  constructor() {
     this.textareaDialog = new FormGroup({
       textarea: new FormControl('', Validators.required),
     });
@@ -267,6 +261,7 @@ export class TextareaDialogComponent {
       </button>
     </mat-dialog-actions>
     `,
+  changeDetection: ChangeDetectionStrategy.Eager,
   styles: [`
     :host {
       display: block;
@@ -277,11 +272,11 @@ export class TextareaDialogComponent {
   `]
 })
 export class InputDialogComponent {
+  private dialogRef = inject<MatDialogRef<InputDialogComponent>>(MatDialogRef);
+  data = inject(MAT_DIALOG_DATA);
+
   inputDialog: FormGroup;
-  constructor(
-    private dialogRef: MatDialogRef<InputDialogComponent>,
-    @Inject(MAT_DIALOG_DATA) public data: any
-  ) {
+  constructor() {
     this.inputDialog = new FormGroup({
       input: new FormControl('', Validators.required),
     });

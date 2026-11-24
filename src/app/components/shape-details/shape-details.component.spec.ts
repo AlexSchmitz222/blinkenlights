@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 
 import { ShapeDetailsComponent } from './shape-details.component';
 
@@ -8,7 +9,8 @@ describe('ShapeDetailsComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [ShapeDetailsComponent]
+      imports: [ShapeDetailsComponent],
+      providers: [provideRouter([])]
     })
     .compileComponents();
 

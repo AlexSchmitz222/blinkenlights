@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy, inject } from '@angular/core';
 import { Shape } from '../../core/interfaces/shape.interface';
 import { MatCardModule } from '@angular/material/card';
 import { MatChipsModule } from '@angular/material/chips';
@@ -17,13 +17,16 @@ import { StorageService } from '../../core/services/storage.service';
   selector: 'app-shape-list',
   imports: [MatCardModule, MatChipsModule, MatButtonModule, RouterLink, MatToolbarModule, MatIconModule],
   templateUrl: './shape-list.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './shape-list.component.scss'
 })
 export class ShapeListComponent implements OnInit {
+  private shapeService = inject(ShapeService);
+  private gridService = inject(GridService);
+  private storageService = inject(StorageService);
+
 
   shapeList: Grid[] = [];
-
-  constructor(private shapeService: ShapeService, private gridService: GridService, private storageService: StorageService) { }
 
   ngOnInit(): void {
     this.storageService.getShapes().forEach((shape) => {

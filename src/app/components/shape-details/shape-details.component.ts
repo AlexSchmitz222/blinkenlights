@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy, inject } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { ActivatedRoute } from '@angular/router';
@@ -22,9 +22,15 @@ import { StorageService } from '../../core/services/storage.service';
   selector: 'app-shape-details',
   imports: [MatToolbarModule, RouterLink, MatButtonModule, MatInputModule, MatFormFieldModule, FormsModule, MatChipsModule, MatSliderModule, MatSlideToggleModule, MatSidenavModule, MatDividerModule],
   templateUrl: './shape-details.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './shape-details.component.scss'
 })
 export class ShapeDetailsComponent implements OnInit {
+  private route = inject(ActivatedRoute);
+  private shapeService = inject(ShapeService);
+  private basicDialogService = inject(BasicDialogService);
+  private storageService = inject(StorageService);
+
   sliderParams: {
     width: { min: number, max: number },
     height: { min: number, max: number }
@@ -37,15 +43,6 @@ export class ShapeDetailsComponent implements OnInit {
   shapeId: string | null = null;
   shape: Shape = emptyShape;
   grid: Grid = emptyGrid;
-
-  constructor(
-    private route: ActivatedRoute,
-    private shapeService: ShapeService,
-    private basicDialogService: BasicDialogService,
-    private storageService: StorageService
-  ) {
-
-  }
   ngOnInit() {
     this.shapeId = this.route.snapshot.paramMap.get('shapeId');
     if (this.shapeId == 'new') {
