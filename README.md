@@ -1,71 +1,107 @@
 # Blinkenlights
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 19.0.7.
+A digital homage to [Blinkenlights](https://en.wikipedia.org/wiki/Project_Blinkenlights), the light installation the Chaos Computer Club put on the Haus des Lehrers in Berlin in 2001. In that installation, every window of the building was one pixel.
 
-## Development server
+You can use this app to draw pixel shapes, arrange them into frames and scenes, and play your show back on a virtual house front. It runs entirely in the browser and has no server or account.
 
-To start a local development server, run:
+## Features
 
-```bash
-ng serve
+- **Shape editor**: draw and erase by dragging, resize up to 39×21, and shift, flip, invert or clear the pattern.
+- **Show editor**: a single screen with a shape library, a stage where you drag objects around, a properties panel and a timeline. In the timeline you can drag & drop frames and scenes to reorder them. The editor also has undo/redo, onion skin and keyboard shortcuts.
+- **Generators**: build scrolling text, an object moving along a path, or a blinking frame without placing every frame by hand.
+- **Pixel font**: a 5×7 proportional font with lowercase letters, descenders, umlauts and a ♥. One line of text is 8 pixels tall, so it fits the original 18×8 building.
+- **Player**: a fullscreen player with a house-front view, looping, frame stepping and controls that hide while the show plays.
+- **Grid presets**: Blinkenlights (18×8, Berlin 2001), Arcade (26×20, Paris 2002) and Wide (39×21).
+- **Import/export**:
+  - `.blinken.json` files: a single show together with the shapes it uses, or a full backup.
+  - The original **BLM** and **BML** movie formats, including grayscale BML.
+- **Light and dark mode**: follows the system setting and can be switched in the toolbar. The player always stays dark.
+
+## Data model
+
+```
+Show ── size (grid), loop
+ └─ Scene ── name
+     └─ Frame ── duration in ms (0 = hold until continued)
+         └─ FrameObject ── position, inverted
+              ├─ shape   → references a Shape by id
+              ├─ text    → rendered with the pixel font
+              └─ bitmap  → raw pixels (used for imported BLM/BML movies)
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+Frames reference shapes by id instead of storing pixels. When you change a shape, every show that uses it changes too. An exported show file contains copies of all the shapes it uses.
 
-## Code scaffolding
+## Storage
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+All data lives in the browser's `localStorage` under the key `blinkenlights.data`. The data is versioned so that later formats can migrate it. To back up your data or move it to another browser, use **Shows → ⋮ → Back up everything**. To restore, import the backup file.
 
-```bash
-ng generate component component-name
-```
+On first start the app adds five demo shapes and two demo shows. Shapes saved by the very first version of the app (under the key `shapes`) are migrated automatically.
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+### File formats
 
-```bash
-ng generate --help
-```
+| File | Content |
+|---|---|
+| `*.blinken.json` with `"format": "blinkenlights-show"` | One show plus every shape it uses |
+| `*.blinken.json` with `"format": "blinkenlights-backup"` | All shows and shapes |
+| `*.blm` | Original Blinkenlights Movie (text, `@duration` + rows of `0`/`1`) |
+| `*.bml` | Original Blinkenlights Markup Language (XML; 1–8 bit, 1 or 3 channels) |
 
-## Building
+How imports handle conflicts:
+- If an imported shape is identical to an existing one, the existing shape is reused.
+- If an imported shape has the same id as an existing one but different pixels, it is added under a new id. The existing shape is never overwritten.
+- If an imported show has the same id as an existing one, you are asked whether to replace it or keep both.
 
-To build the project run:
+## Keyboard shortcuts
 
-```bash
-ng build
-```
+| Where | Keys |
+|---|---|
+| Player | <kbd>Space</kbd> play/pause · <kbd>←</kbd>/<kbd>→</kbd> step · <kbd>Home</kbd> back to start · <kbd>L</kbd> loop · <kbd>V</kbd> house front / pixels · <kbd>F</kbd> fullscreen |
+| Show editor | <kbd>Space</kbd> preview · <kbd>Ctrl</kbd>+<kbd>S</kbd> save · <kbd>Ctrl</kbd>+<kbd>Z</kbd> / <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd> undo/redo · <kbd>Ctrl</kbd>+<kbd>D</kbd> duplicate frame · arrows move the selected object (<kbd>Shift</kbd> = 5 px), or step through frames when nothing is selected · <kbd>,</kbd>/<kbd>.</kbd> previous/next frame · <kbd>Del</kbd> delete object · <kbd>Esc</kbd> deselect · <kbd>O</kbd> onion skin |
+| Shape editor | <kbd>Ctrl</kbd>+<kbd>S</kbd> save · <kbd>Alt</kbd>+arrows shift the pattern · right-drag erases |
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+## Development
 
-## Running unit tests
-
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
-
-```bash
-ng test
-```
-
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
+Requires Node.js 20.19+, 22.12+ or 24+.
 
 ```bash
-ng e2e
+npm install
+npm start          # dev server on http://localhost:4200
+npm test           # unit tests (Vitest + jsdom)
+npm run build      # production build into dist/blinkenlights
 ```
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+Project layout:
 
-## Additional Resources
+```
+src/app/
+  components/      pages: start, show-list, show-editor, player, shape-list, shape-details
+  shared/          pixel-grid (the interactive stage), grid-thumb (cheap canvas previews)
+  core/
+    interfaces/    data model
+    services/      drawing, text, rendering, player, storage, file formats, generators
+    utils/         immutable show edits, ids, preferences
+    theme/         light/dark mode
+  shapes/          default shapes and the pixel font
+  shows/           demo shows
+public/
+  icons/           Material Design Icons as SVG (see below)
+  fonts/           JetBrains Mono
+```
 
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+### Icons
 
-## TODO:
+Icons come from [Material Design Icons](https://pictogrammers.com/library/mdi/) by Pictogrammers and are stored as individual SVG files in `public/icons/`. To add one:
+1. Download `<name>.svg` from pictogrammers into `public/icons/`.
+2. Add the name to `src/app/core/icons.ts`.
+3. Use it as `<mat-icon svgIcon="<name>" />`.
 
-- [ ] Optimize frame storage by only storing a frame once 
-- [x] Venus
-- [x] Earth (Orbit/Moon)
-- [x] Mars
-- [ ] Jupiter
-- [ ] Saturn
-- [ ] Uranus
-- [ ] Neptune
-- [ ] Comet Haley
+### Credits & licenses
+
+- Icons: Material Design Icons by Pictogrammers, Apache 2.0 (`public/icons/LICENSE`)
+- Font: JetBrains Mono, SIL Open Font License 1.1 (`public/fonts/OFL.txt`)
+- Inspired by Project Blinkenlights by the Chaos Computer Club, 2001
+
+## Roadmap
+
+- Hardware output adapter: send rendered frames to a real LED matrix, for example over WebSocket or WebSerial. `RenderService.renderFrame()` is already a pure frame → grid function and is the place to hook this in.
+- Interactive mode in the spirit of the original's phone-controlled games and "love letters", controlled by keyboard here.
