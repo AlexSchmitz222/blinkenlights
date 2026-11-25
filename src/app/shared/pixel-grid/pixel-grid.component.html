@@ -3,7 +3,7 @@
     #gridEl
     class="grid"
     role="img"
-    [attr.aria-label]="'Light grid, ' + width() + ' by ' + height()"
+    [attr.aria-label]="'grid.label' | t: { width: width(), height: height() }"
     [style.--w]="width()"
     [style.--h]="height()"
     (pointerdown)="onPointerDown($event)"

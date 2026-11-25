@@ -9,10 +9,11 @@ import { ShowGeneratorService } from '../../core/services/show-generator.service
 import { StorageService } from '../../core/services/storage.service';
 import { GRID_PRESETS, Show } from '../../core/interfaces/show.interface';
 import { readPreference } from '../../core/utils/preferences';
+import { TranslatePipe } from '../../core/i18n/translate.pipe';
 
 @Component({
   selector: 'app-start',
-  imports: [RouterLink, MatButtonModule, MatIconModule, PixelGridComponent],
+  imports: [RouterLink, MatButtonModule, MatIconModule, PixelGridComponent, TranslatePipe],
   providers: [PlayerService],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -22,16 +23,12 @@ import { readPreference } from '../../core/utils/preferences';
       </div>
       <div class="copy">
         <h1>blinkenlights</h1>
-        <p class="muted">
-          A digital homage to <em>Blinkenlights</em>, the installation the Chaos Computer Club put on the
-          Haus des Lehrers in Berlin in 2001, where every window was one pixel. Draw shapes, arrange them into
-          frames and scenes, and play your show back on a virtual house front.
-        </p>
+        <p class="muted">{{ 'start.intro' | t }}</p>
         <div class="actions">
-          <a matButton="filled" routerLink="/shows"><mat-icon svgIcon="movie-open-outline" />Shows</a>
-          <a matButton="outlined" routerLink="/shapes"><mat-icon svgIcon="shape-outline" />Shapes</a>
+          <a matButton="filled" routerLink="/shows"><mat-icon svgIcon="movie-open-outline" />{{ 'nav.shows' | t }}</a>
+          <a matButton="outlined" routerLink="/shapes"><mat-icon svgIcon="shape-outline" />{{ 'nav.shapes' | t }}</a>
           @if (lastShow(); as show) {
-            <a matButton [routerLink]="['/play', show.id]"><mat-icon svgIcon="play" />Continue “{{ show.name }}”</a>
+            <a matButton [routerLink]="['/play', show.id]"><mat-icon svgIcon="play" />{{ 'start.continue' | t: { name: show.name } }}</a>
           }
         </div>
       </div>

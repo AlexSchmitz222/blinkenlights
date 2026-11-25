@@ -5,6 +5,7 @@ import { FormControl, Validators, ReactiveFormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatButtonModule } from '@angular/material/button';
 import { MatInputModule } from '@angular/material/input';
+import { TranslatePipe } from '../i18n/translate.pipe';
 
 export interface ConfirmDialogData {
   title: string;
@@ -52,14 +53,14 @@ export class BasicDialogService {
 
 @Component({
   selector: 'app-confirm-dialog',
-  imports: [MatDialogModule, MatButtonModule],
+  imports: [MatDialogModule, MatButtonModule, TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <h2 mat-dialog-title>{{ data.title }}</h2>
     <mat-dialog-content>{{ data.message }}</mat-dialog-content>
     <mat-dialog-actions align="end">
-      <button matButton [mat-dialog-close]="false">{{ data.cancelLabel ?? 'Cancel' }}</button>
-      <button matButton="filled" [mat-dialog-close]="true" cdkFocusInitial>{{ data.confirmLabel ?? 'OK' }}</button>
+      <button matButton [mat-dialog-close]="false">{{ data.cancelLabel ?? ('common.cancel' | t) }}</button>
+      <button matButton="filled" [mat-dialog-close]="true" cdkFocusInitial>{{ data.confirmLabel ?? ('common.ok' | t) }}</button>
     </mat-dialog-actions>
   `,
 })
@@ -69,28 +70,28 @@ export class ConfirmDialogComponent {
 
 @Component({
   selector: 'app-input-dialog',
-  imports: [MatDialogModule, ReactiveFormsModule, MatFormFieldModule, MatButtonModule, MatInputModule],
+  imports: [MatDialogModule, ReactiveFormsModule, MatFormFieldModule, MatButtonModule, MatInputModule, TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <h2 mat-dialog-title>{{ data.title }}</h2>
     <mat-dialog-content>
       <form (ngSubmit)="save()" id="input-dialog-form">
         <mat-form-field appearance="outline" class="full-width">
-          <mat-label>{{ data.label ?? 'Value' }}</mat-label>
+          <mat-label>{{ data.label ?? ('common.value' | t) }}</mat-label>
           @if (data.multiline) {
             <textarea matInput [formControl]="control" rows="4" cdkFocusInitial></textarea>
           } @else {
             <input matInput [type]="data.type ?? 'text'" [formControl]="control" cdkFocusInitial>
           }
           @if (control.hasError('required')) {
-            <mat-error>Required</mat-error>
+            <mat-error>{{ 'common.required' | t }}</mat-error>
           }
         </mat-form-field>
       </form>
     </mat-dialog-content>
     <mat-dialog-actions align="end">
-      <button matButton type="button" [mat-dialog-close]="null">Cancel</button>
-      <button matButton="filled" type="submit" form="input-dialog-form">OK</button>
+      <button matButton type="button" [mat-dialog-close]="null">{{ 'common.cancel' | t }}</button>
+      <button matButton="filled" type="submit" form="input-dialog-form">{{ 'common.ok' | t }}</button>
     </mat-dialog-actions>
   `,
   styles: `.full-width { width: 100%; margin-top: 8px; }`

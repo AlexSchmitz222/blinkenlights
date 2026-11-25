@@ -44,7 +44,7 @@ export class BlinkenFormatService {
     const format = this.detect(content);
     if (format === 'blm') return this.parseBlm(content, fileName);
     if (format === 'bml') return this.parseBml(content, fileName);
-    throw new InvalidFileError('This is not a Blinkenlights movie (BLM/BML).');
+    throw new InvalidFileError('files.notMovie');
   }
 
   // --- BLM -----------------------------------------------------------------------------------
@@ -71,12 +71,12 @@ export class BlinkenFormatService {
         continue;
       }
       if (line && current) {
-        if (!/^[01]+$/.test(line)) throw new InvalidFileError(`Unexpected characters in a BLM frame: "${line.slice(0, 20)}"`);
+        if (!/^[01]+$/.test(line)) throw new InvalidFileError('files.blmCharacters', { line: line.slice(0, 20) });
         current.rows.push(line);
       }
     }
 
-    if (frames.length === 0) throw new InvalidFileError('The movie has no frames.');
+    if (frames.length === 0) throw new InvalidFileError('files.noFrames');
     size ??= { width: Math.max(...frames.flatMap(f => f.rows.map(r => r.length))), height: Math.max(...frames.map(f => f.rows.length)) };
     return this.toShow(frames, size, meta['name'] ?? meta['title'] ?? baseName(fileName), meta['description'] ?? '', false);
   }
@@ -96,16 +96,16 @@ export class BlinkenFormatService {
 
   parseBml(content: string, fileName = 'Imported movie'): Show {
     const doc = new DOMParser().parseFromString(content, 'application/xml');
-    if (doc.getElementsByTagName('parsererror').length) throw new InvalidFileError('The BML file is not valid XML.');
+    if (doc.getElementsByTagName('parsererror').length) throw new InvalidFileError('files.bmlInvalidXml');
     const root = doc.documentElement;
-    if (root.nodeName.toLowerCase() !== 'blm') throw new InvalidFileError('The BML file has no <blm> element.');
+    if (root.nodeName.toLowerCase() !== 'blm') throw new InvalidFileError('files.bmlNoRoot');
 
     const width = parseInt(root.getAttribute('width') ?? '', 10);
     const height = parseInt(root.getAttribute('height') ?? '', 10);
     const bits = parseInt(root.getAttribute('bits') ?? '1', 10) || 1;
     const channels = parseInt(root.getAttribute('channels') ?? '1', 10) || 1;
-    if (!(width > 0 && height > 0)) throw new InvalidFileError('The BML file has no valid width/height.');
-    if (bits < 1 || bits > 8) throw new InvalidFileError(`Unsupported bit depth: ${bits}.`);
+    if (!(width > 0 && height > 0)) throw new InvalidFileError('files.bmlNoSize');
+    if (bits < 1 || bits > 8) throw new InvalidFileError('files.bmlBits', { bits });
 
     const text = (tag: string) => root.getElementsByTagName('header')[0]?.getElementsByTagName(tag)[0]?.textContent?.trim();
     const loop = /^(yes|true|1)$/i.test(text('loop') ?? '');
@@ -129,7 +129,7 @@ export class BlinkenFormatService {
         return out;
       }),
     }));
-    if (frames.length === 0) throw new InvalidFileError('The movie has no frames.');
+    if (frames.length === 0) throw new InvalidFileError('files.noFrames');
     return this.toShow(frames, { width, height }, text('title') || baseName(fileName), text('description') ?? '', loop);
   }
 

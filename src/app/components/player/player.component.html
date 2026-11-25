@@ -13,21 +13,21 @@
         [max]="Math.max(0, player.frameCount() - 1)"
         [value]="player.position()"
         (input)="player.seek(+$any($event.target).value)"
-        aria-label="Position" />
+        [attr.aria-label]="'player.position' | t" />
     </div>
 
     <div class="bar">
-      <a matIconButton routerLink="/shows" matTooltip="Back to shows" aria-label="Back to shows">
+      <a matIconButton routerLink="/shows" [matTooltip]="'common.backToShows' | t" [attr.aria-label]="'common.backToShows' | t">
         <mat-icon svgIcon="arrow-left" />
       </a>
 
-      <button matIconButton (click)="player.previous()" matTooltip="Previous frame (←)" aria-label="Previous frame">
+      <button matIconButton (click)="player.previous()" [matTooltip]="'player.previousFrame' | t" [attr.aria-label]="'player.previousFrame' | t">
         <mat-icon svgIcon="step-backward" />
       </button>
-      <button matIconButton class="play" (click)="player.toggle()" [matTooltip]="player.playing() ? 'Pause (Space)' : 'Play (Space)'" [attr.aria-label]="player.playing() ? 'Pause' : 'Play'">
+      <button matIconButton class="play" (click)="player.toggle()" [matTooltip]="(player.playing() ? 'player.pauseTooltip' : 'player.playTooltip') | t" [attr.aria-label]="(player.playing() ? 'common.pause' : 'common.play') | t">
         <mat-icon [svgIcon]="player.playing() ? 'pause' : 'play'" />
       </button>
-      <button matIconButton (click)="player.next()" matTooltip="Next frame (→)" aria-label="Next frame">
+      <button matIconButton (click)="player.next()" [matTooltip]="'player.nextFrame' | t" [attr.aria-label]="'player.nextFrame' | t">
         <mat-icon svgIcon="step-forward" />
       </button>
 
@@ -41,28 +41,28 @@
       <span class="spacer"></span>
       <span class="preset">{{ presetName() }}</span>
 
-      <button matIconButton (click)="toggleLoop()" [class.active]="player.loop()" matTooltip="Loop (L)" aria-label="Toggle loop">
+      <button matIconButton (click)="toggleLoop()" [class.active]="player.loop()" [matTooltip]="'player.loop' | t" [attr.aria-label]="'player.toggleLoop' | t">
         <mat-icon [svgIcon]="player.loop() ? 'repeat' : 'repeat-off'" />
       </button>
       <button
         matIconButton
         (click)="setViewMode(viewMode() === 'facade' ? 'pixel' : 'facade')"
         [class.active]="viewMode() === 'facade'"
-        [matTooltip]="viewMode() === 'facade' ? 'Show as pixels (V)' : 'Show as house front (V)'"
-        aria-label="Toggle house front view">
+        [matTooltip]="(viewMode() === 'facade' ? 'player.asPixels' : 'player.asFacade') | t"
+        [attr.aria-label]="'player.toggleFacade' | t">
         <mat-icon svgIcon="window-closed-variant" />
       </button>
-      <button matIconButton (click)="debug.set(!debug())" [class.active]="debug()" matTooltip="Show coordinates" aria-label="Show coordinates">
+      <button matIconButton (click)="debug.set(!debug())" [class.active]="debug()" [matTooltip]="'common.showCoordinates' | t" [attr.aria-label]="'common.showCoordinates' | t">
         <mat-icon svgIcon="grid" />
       </button>
-      <button matIconButton (click)="toggleFullscreen()" [matTooltip]="fullscreen() ? 'Exit fullscreen (F)' : 'Fullscreen (F)'" aria-label="Toggle fullscreen">
+      <button matIconButton (click)="toggleFullscreen()" [matTooltip]="(fullscreen() ? 'player.exitFullscreen' : 'player.fullscreen') | t" [attr.aria-label]="'player.toggleFullscreen' | t">
         <mat-icon [svgIcon]="fullscreen() ? 'fullscreen-exit' : 'fullscreen'" />
       </button>
     </div>
   </div>
 } @else {
   <div class="missing">
-    <p>This show doesn't exist (anymore).</p>
-    <a matButton="outlined" routerLink="/shows">Back to shows</a>
+    <p>{{ 'common.notFoundShow' | t }}</p>
+    <a matButton="outlined" routerLink="/shows">{{ 'common.backToShows' | t }}</a>
   </div>
 }

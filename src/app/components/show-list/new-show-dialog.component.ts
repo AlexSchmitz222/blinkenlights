@@ -6,6 +6,8 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { GRID_PRESETS, GridPreset } from '../../core/interfaces/show.interface';
 import { Size } from '../../core/interfaces/grid.interface';
+import { I18nService, TranslationKey } from '../../core/i18n/i18n.service';
+import { TranslatePipe } from '../../core/i18n/translate.pipe';
 
 export interface NewShowResult {
   name: string;
@@ -14,19 +16,19 @@ export interface NewShowResult {
 
 @Component({
   selector: 'app-new-show-dialog',
-  imports: [MatDialogModule, MatButtonModule, MatFormFieldModule, MatInputModule, FormsModule],
+  imports: [MatDialogModule, MatButtonModule, MatFormFieldModule, MatInputModule, FormsModule, TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <h2 mat-dialog-title>New show</h2>
+    <h2 mat-dialog-title>{{ 'newShow.title' | t }}</h2>
     <mat-dialog-content>
       <form id="new-show" (ngSubmit)="create()">
         <mat-form-field appearance="outline" class="full">
-          <mat-label>Name</mat-label>
+          <mat-label>{{ 'common.name' | t }}</mat-label>
           <input matInput name="name" [ngModel]="name()" (ngModelChange)="name.set($event)" required cdkFocusInitial maxlength="60" />
         </mat-form-field>
       </form>
-      <p class="panel-title">Grid</p>
-      <div class="presets" role="radiogroup" aria-label="Grid size">
+      <p class="panel-title">{{ 'newShow.grid' | t }}</p>
+      <div class="presets" role="radiogroup" [attr.aria-label]="'newShow.gridSize' | t">
         @for (preset of presets; track preset.id) {
           <button
             type="button"
@@ -38,14 +40,14 @@ export interface NewShowResult {
             <span class="mini" [style.aspect-ratio]="preset.size.width + ' / ' + preset.size.height"></span>
             <span class="name">{{ preset.name }}</span>
             <span class="size">{{ preset.size.width }} × {{ preset.size.height }}</span>
-            <span class="desc">{{ preset.description }}</span>
+            <span class="desc">{{ presetDescription(preset.id) | t }}</span>
           </button>
         }
       </div>
     </mat-dialog-content>
     <mat-dialog-actions align="end">
-      <button matButton type="button" mat-dialog-close>Cancel</button>
-      <button matButton="filled" type="submit" form="new-show" [disabled]="!name().trim()">Create</button>
+      <button matButton type="button" mat-dialog-close>{{ 'common.cancel' | t }}</button>
+      <button matButton="filled" type="submit" form="new-show" [disabled]="!name().trim()">{{ 'newShow.create' | t }}</button>
     </mat-dialog-actions>
   `,
   styles: `
@@ -73,8 +75,12 @@ export interface NewShowResult {
 export class NewShowDialogComponent {
   private dialogRef = inject<MatDialogRef<NewShowDialogComponent, NewShowResult>>(MatDialogRef);
   readonly presets = GRID_PRESETS;
-  readonly name = signal('My show');
+  readonly name = signal(inject(I18nService).t('shows.defaultName'));
   readonly selected = signal<GridPreset>(GRID_PRESETS[0]);
+
+  presetDescription(id: string): TranslationKey {
+    return `presets.${id}` as TranslationKey;
+  }
 
   create() {
     const name = this.name().trim();

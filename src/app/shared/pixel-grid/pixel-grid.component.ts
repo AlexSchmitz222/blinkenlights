@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, ElementRef, computed, input, output, viewChild } from '@angular/core';
 import { Grid, Position } from '../../core/interfaces/grid.interface';
+import { TranslatePipe } from '../../core/i18n/translate.pipe';
 
 export interface GridHighlight {
   x: number;
@@ -25,6 +26,7 @@ export interface PixelPointerEvent extends Position {
  */
 @Component({
   selector: 'app-pixel-grid',
+  imports: [TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './pixel-grid.component.html',
   styleUrl: './pixel-grid.component.scss',

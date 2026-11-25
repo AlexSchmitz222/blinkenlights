@@ -56,6 +56,7 @@ export const ICONS = [
   'text-box-outline',
   'theme-light-dark',
   'timer-outline',
+  'translate',
   'undo',
   'upload',
   'weather-night',

@@ -28,7 +28,8 @@ import { PixelGridComponent, PixelPointerEvent, GridHighlight } from '../../shar
 import { GridThumbComponent } from '../../shared/grid-thumb/grid-thumb.component';
 import { GeneratorConfig, GeneratorDialogComponent, GeneratorDialogData, GeneratorKind } from './generator-dialog.component';
 import { createId } from '../../core/utils/id';
-import { formatDuration } from '../../core/utils/preferences';
+import { I18nService, TranslationKey } from '../../core/i18n/i18n.service';
+import { TranslatePipe } from '../../core/i18n/translate.pipe';
 import * as edit from '../../core/utils/show-edit';
 
 interface HistoryEntry {
@@ -43,7 +44,7 @@ const DEFAULT_FRAME_DURATION = 500;
   selector: 'app-show-editor',
   imports: [
     RouterLink, DragDropModule, MatButtonModule, MatIconModule, MatMenuModule, MatTooltipModule, MatSelectModule,
-    MatSlideToggleModule, PixelGridComponent, GridThumbComponent,
+    MatSlideToggleModule, PixelGridComponent, GridThumbComponent, TranslatePipe,
   ],
   providers: [PlayerService],
   templateUrl: './show-editor.component.html',
@@ -64,6 +65,7 @@ export class ShowEditorComponent implements HasUnsavedChanges {
   private dialogs = inject(BasicDialogService);
   private dialog = inject(MatDialog);
   private snackBar = inject(MatSnackBar);
+  private i18n = inject(I18nService);
   readonly player = inject(PlayerService);
 
   /** Route parameter `/shows/:showId`. */
@@ -129,7 +131,7 @@ export class ShowEditorComponent implements HasUnsavedChanges {
     const durations = new Set(this.selectedFrames().map(f => f.frame.duration));
     return durations.size === 1 ? [...durations][0] : null;
   });
-  readonly selectionDurationTotal = computed(() => formatDuration(this.selectedFrames().reduce((t, f) => t + f.frame.duration, 0)));
+  readonly selectionDurationTotal = computed(() => this.i18n.duration(this.selectedFrames().reduce((t, f) => t + f.frame.duration, 0)));
   readonly presetId = computed(() => {
     const show = this.show();
     return show ? findPreset(show.size)?.id ?? 'custom' : 'custom';
@@ -190,11 +192,11 @@ export class ShowEditorComponent implements HasUnsavedChanges {
   });
 
   readonly sceneStats = computed(() =>
-    (this.show()?.scenes ?? []).map(scene => formatDuration(scene.frames.reduce((t, f) => t + f.duration, 0))),
+    (this.show()?.scenes ?? []).map(scene => this.i18n.duration(scene.frames.reduce((t, f) => t + f.duration, 0))),
   );
 
   readonly totalDuration = computed(() =>
-    formatDuration((this.show()?.scenes ?? []).reduce((t, s) => t + s.frames.reduce((u, f) => u + f.duration, 0), 0)),
+    this.i18n.duration((this.show()?.scenes ?? []).reduce((t, s) => t + s.frames.reduce((u, f) => u + f.duration, 0), 0)),
   );
 
   private timelineEl = viewChild<ElementRef<HTMLElement>>('timeline');
@@ -490,7 +492,7 @@ export class ShowEditorComponent implements HasUnsavedChanges {
   }
 
   addText() {
-    const text = 'Hi!';
+    const text = this.i18n.t('editor.defaultText');
     const size = this.text.measureText(text);
     this.addObject({ id: createId('obj'), type: 'text', text, position: this.centered({ width: size.width, height: this.text.capHeight }) });
   }
@@ -568,19 +570,23 @@ export class ShowEditorComponent implements HasUnsavedChanges {
         ),
       })),
     );
-    this.snackBar.open('Applied to the rest of the scene', undefined, { duration: 2000 });
+    this.snackBar.open(this.i18n.t('editor.appliedToRest'), undefined, { duration: 2000 });
   }
 
   objectLabel(object: FrameObject): string {
     switch (object.type) {
-      case 'shape': return this.resolveShape(object.shapeId)?.name ?? 'Missing shape';
+      case 'shape': return this.resolveShape(object.shapeId)?.name ?? this.i18n.t('editor.missingShape');
       case 'text': return `“${object.text}”`;
-      case 'bitmap': return `Bitmap ${object.size.width}×${object.size.height}`;
+      case 'bitmap': return this.i18n.t('editor.bitmapLabel', { width: object.size.width, height: object.size.height });
     }
   }
 
   objectIcon(object: FrameObject): string {
     return { shape: 'shape-outline', text: 'format-text', bitmap: 'grid' }[object.type];
+  }
+
+  objectTypeLabel(object: FrameObject): TranslationKey {
+    return `editor.objectTypes.${object.type}`;
   }
 
   asText(object: FrameObject): TextObject | null {
@@ -621,7 +627,7 @@ export class ShowEditorComponent implements HasUnsavedChanges {
         ? { ...frame, objects: frame.objects.map(o => (o.id === object.id ? structuredClone(object) : o)) }
         : { ...frame, objects: [...frame.objects, structuredClone(object)] },
     );
-    this.snackBar.open(`Applied to ${this.selectedFrames().length} frames`, undefined, { duration: 2000 });
+    this.snackBar.open(this.i18n.t('editor.appliedToFrames', { count: this.selectedFrames().length }), undefined, { duration: 2000 });
   }
 
   /** Applies the current frame's duration to every frame in the scene. */
@@ -686,7 +692,7 @@ export class ShowEditorComponent implements HasUnsavedChanges {
     const frameIndex = Math.min(first.frameIndex, scene.frames.length - 1);
     this.selectFrame(first.sceneIndex, frameIndex);
     if (selected.length > 1) {
-      this.snackBar.open(`Deleted ${selected.length} frames`, 'Undo', { duration: 4000 }).onAction().subscribe(() => this.undo());
+      this.snackBar.open(this.i18n.t('editor.deletedFrames', { count: selected.length }), this.i18n.t('common.undo'), { duration: 4000 }).onAction().subscribe(() => this.undo());
     }
   }
 
@@ -716,10 +722,10 @@ export class ShowEditorComponent implements HasUnsavedChanges {
     if (!show) return;
     const index = show.scenes.length;
     let n = index + 1;
-    while (show.scenes.some(s => s.name === `Scene ${n}`)) n++;
+    while (show.scenes.some(s => s.name === this.i18n.t('editor.sceneDefaultName', { n }))) n++;
     this.edit(s => edit.insertScene(s, index, {
       id: createId('scene'),
-      name: `Scene ${n}`,
+      name: this.i18n.t('editor.sceneDefaultName', { n }),
       frames: [{ id: createId('frame'), duration: DEFAULT_FRAME_DURATION, objects: [] }],
     }));
     this.selectFrame(index, 0);
@@ -733,7 +739,7 @@ export class ShowEditorComponent implements HasUnsavedChanges {
   duplicateScene(sceneIndex: number) {
     const scene = this.show()?.scenes[sceneIndex];
     if (!scene) return;
-    this.edit(show => edit.insertScene(show, sceneIndex + 1, edit.copyScene(scene)));
+    this.edit(show => edit.insertScene(show, sceneIndex + 1, edit.copyScene(scene, this.i18n.t('editor.sceneCopy', { name: scene.name }))));
     this.selectFrame(sceneIndex + 1, 0);
   }
 
@@ -749,11 +755,15 @@ export class ShowEditorComponent implements HasUnsavedChanges {
     const scene = show?.scenes[sceneIndex];
     if (!show || !scene) return;
     this.dialogs
-      .showBooleanDialog(`Delete scene "${scene.name}"?`, `Its ${scene.frames.length} frame(s) will be removed. You can undo this.`, { confirmLabel: 'Delete' })
+      .showBooleanDialog(
+        this.i18n.t('editor.deleteSceneTitle', { name: scene.name }),
+        this.i18n.t('editor.deleteSceneMessage', { count: scene.frames.length }),
+        { confirmLabel: this.i18n.t('common.delete') },
+      )
       .subscribe(ok => {
         if (!ok) return;
         if (show.scenes.length === 1) {
-          this.edit(s => ({ ...s, scenes: [{ id: createId('scene'), name: 'Scene 1', frames: [{ id: createId('frame'), duration: DEFAULT_FRAME_DURATION, objects: [] }] }] }));
+          this.edit(s => ({ ...s, scenes: [{ id: createId('scene'), name: this.i18n.t('shows.firstScene'), frames: [{ id: createId('frame'), duration: DEFAULT_FRAME_DURATION, objects: [] }] }] }));
           this.selectFrame(0, 0);
         } else {
           this.edit(s => edit.removeScene(s, sceneIndex));
@@ -786,17 +796,17 @@ export class ShowEditorComponent implements HasUnsavedChanges {
     if (!show) return;
     const name = show.name.trim();
     if (!name) {
-      this.snackBar.open('The show needs a name', undefined, { duration: 3000 });
+      this.snackBar.open(this.i18n.t('editor.nameRequired'), undefined, { duration: 3000 });
       return;
     }
     if (this.storage.isShowNameTaken(name, show.id)) {
-      this.snackBar.open('Another show already uses this name', undefined, { duration: 3000 });
+      this.snackBar.open(this.i18n.t('editor.nameTaken'), undefined, { duration: 3000 });
       return;
     }
     const saved = this.storage.saveShow({ ...show, name });
     this.show.set(saved);
     this.savedRevision.set(this.revision());
-    this.snackBar.open(`Saved "${saved.name}"`, undefined, { duration: 2000 });
+    this.snackBar.open(this.i18n.t('common.saved', { name: saved.name }), undefined, { duration: 2000 });
   }
 
   export() {
@@ -815,7 +825,7 @@ export class ShowEditorComponent implements HasUnsavedChanges {
     const show = this.show();
     if (!show) return;
     if (kind === 'move' && !this.selectedObject()) {
-      this.snackBar.open('Select the object to move on the stage first', undefined, { duration: 3000 });
+      this.snackBar.open(this.i18n.t('editor.selectObjectToMove'), undefined, { duration: 3000 });
       return;
     }
     const data: GeneratorDialogData = {
@@ -839,10 +849,10 @@ export class ShowEditorComponent implements HasUnsavedChanges {
     switch (config.kind) {
       case 'scroll': {
         const frames = this.generator.scrollText(config.text, show.size, config);
-        const scene = { id: createId('scene'), name: `Scroll “${config.text}”`, frames };
+        const scene = { id: createId('scene'), name: this.i18n.t('editor.scrollSceneName', { text: config.text }), frames };
         this.edit(s => edit.insertScene(s, si + 1, scene));
         this.selectFrame(si + 1, 0);
-        this.snackBar.open(`Added a scene with ${frames.length} frames`, undefined, { duration: 2500 });
+        this.snackBar.open(this.i18n.t('editor.addedScene', { count: frames.length }), undefined, { duration: 2500 });
         break;
       }
       case 'move': {

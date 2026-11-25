@@ -7,7 +7,7 @@ You can use this app to draw pixel shapes, arrange them into frames and scenes, 
 ## Features
 
 - **Shape editor**: draw and erase by dragging, resize up to 39×21, and shift, flip, invert or clear the pattern.
-- **Show editor**: a single screen with a shape library, a stage where you drag objects around, a properties panel and a timeline. In the timeline you can drag & drop frames and scenes to reorder them. The editor also has undo/redo, onion skin and keyboard shortcuts.
+- **Show editor**: a single screen with a shape library, a stage where you drag objects around, a properties panel and a timeline. In the timeline you can drag & drop frames and scenes to reorder them. You can also select several frames with Ctrl/⌘ + click or Shift + click and change their duration, duplicate or delete them together. The editor also has undo/redo, onion skin and keyboard shortcuts.
 - **Generators**: build scrolling text, an object moving along a path, or a blinking frame without placing every frame by hand.
 - **Pixel font**: a 5×7 proportional font with lowercase letters, descenders, umlauts and a ♥. One line of text is 8 pixels tall, so it fits the original 18×8 building.
 - **Player**: a fullscreen player with a house-front view, looping, frame stepping and controls that hide while the show plays.
@@ -16,6 +16,7 @@ You can use this app to draw pixel shapes, arrange them into frames and scenes, 
   - `.blinken.json` files: a single show together with the shapes it uses, or a full backup.
   - The original **BLM** and **BML** movie formats, including grayscale BML.
 - **Light and dark mode**: follows the system setting and can be switched in the toolbar. The player always stays dark.
+- **English and German**: the app starts in the browser's language. You can switch it in the toolbar, and the choice is remembered.
 
 ## Data model
 
@@ -56,7 +57,7 @@ How imports handle conflicts:
 | Where | Keys |
 |---|---|
 | Player | <kbd>Space</kbd> play/pause · <kbd>←</kbd>/<kbd>→</kbd> step · <kbd>Home</kbd> back to start · <kbd>L</kbd> loop · <kbd>V</kbd> house front / pixels · <kbd>F</kbd> fullscreen |
-| Show editor | <kbd>Space</kbd> preview · <kbd>Ctrl</kbd>+<kbd>S</kbd> save · <kbd>Ctrl</kbd>+<kbd>Z</kbd> / <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd> undo/redo · <kbd>Ctrl</kbd>+<kbd>D</kbd> duplicate frame · arrows move the selected object (<kbd>Shift</kbd> = 5 px), or step through frames when nothing is selected · <kbd>,</kbd>/<kbd>.</kbd> previous/next frame · <kbd>Del</kbd> delete object · <kbd>Esc</kbd> deselect · <kbd>O</kbd> onion skin |
+| Show editor | <kbd>Space</kbd> preview · <kbd>Ctrl</kbd>+<kbd>S</kbd> save · <kbd>Ctrl</kbd>+<kbd>Z</kbd> / <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd> undo/redo · <kbd>Ctrl</kbd>+click / <kbd>Shift</kbd>+click select several frames · <kbd>Ctrl</kbd>+<kbd>A</kbd> select the scene · <kbd>Ctrl</kbd>+<kbd>D</kbd> duplicate selected frames · arrows move the selected object (<kbd>Shift</kbd> = 5 px), or step through frames when nothing is selected · <kbd>,</kbd>/<kbd>.</kbd> previous/next frame · <kbd>Del</kbd> delete the selected object, or the selected frames · <kbd>Esc</kbd> deselect · <kbd>O</kbd> onion skin |
 | Shape editor | <kbd>Ctrl</kbd>+<kbd>S</kbd> save · <kbd>Alt</kbd>+arrows shift the pattern · right-drag erases |
 
 ## Development
@@ -82,11 +83,24 @@ src/app/
     utils/         immutable show edits, ids, preferences
     theme/         light/dark mode
   shapes/          default shapes and the pixel font
+  core/i18n/       translations (en, de), the t pipe and the title strategy
   shows/           demo shows
 public/
   icons/           Material Design Icons as SVG (see below)
   fonts/           JetBrains Mono
 ```
+
+### Translations
+
+All texts live in `src/app/core/i18n/`. `en.ts` is the reference, and `de.ts` must have exactly the same keys: a missing key is a compile error. In templates, use `{{ 'shows.title' | t }}`. In code, use `inject(I18nService).t('shows.title')`. Texts can contain `{placeholders}` and a simple plural in the form `one|many`, which is chosen by `count`.
+
+To add a language:
+1. Copy `de.ts`, translate the texts and type the copy as `Dictionary<typeof en>`.
+2. Register it in `DICTIONARIES` and `LANGUAGES` in `i18n.service.ts`.
+
+### Logo and favicons
+
+The "B" logo is a 4×5 pixel pattern in `src/app/shared/logo/logo.component.ts`. After changing it, update the copy of the pattern in `scripts/generate-favicon.py` and run `python3 scripts/generate-favicon.py` (needs Pillow). The script regenerates `favicon.svg`, `favicon.ico` and `apple-touch-icon.png`.
 
 ### Icons
 

@@ -1,63 +1,63 @@
 <div class="page">
   <header class="page-header">
-    <h1>Shows</h1>
+    <h1>{{ 'shows.title' | t }}</h1>
     <span class="chip">{{ items().length }}</span>
     <span class="spacer"></span>
     <input #fileInput type="file" accept=".json,.blm,.bml,.xml,application/json,text/plain,application/xml" hidden (change)="import(fileInput)" />
     <button matButton (click)="fileInput.click()">
       <mat-icon svgIcon="upload" />
-      Import
+      {{ 'shows.import' | t }}
     </button>
-    <button matIconButton [matMenuTriggerFor]="more" aria-label="More">
+    <button matIconButton [matMenuTriggerFor]="more" [attr.aria-label]="'common.more' | t">
       <mat-icon svgIcon="dots-vertical" />
     </button>
     <mat-menu #more="matMenu" xPosition="before">
       <button mat-menu-item (click)="exportBackup()">
-        <mat-icon svgIcon="download" />Back up everything
+        <mat-icon svgIcon="download" />{{ 'shows.backup' | t }}
       </button>
       <button mat-menu-item (click)="fileInput.click()">
-        <mat-icon svgIcon="upload" />Restore backup
+        <mat-icon svgIcon="upload" />{{ 'shows.restore' | t }}
       </button>
     </mat-menu>
     <button matButton="filled" (click)="newShow()">
       <mat-icon svgIcon="plus" />
-      New show
+      {{ 'shows.newShow' | t }}
     </button>
   </header>
 
   @if (items().length === 0) {
     <div class="panel empty-state">
-      <p>No shows yet.</p>
-      <button matButton="outlined" (click)="newShow()">Create your first show</button>
+      <p>{{ 'shows.empty' | t }}</p>
+      <button matButton="outlined" (click)="newShow()">{{ 'shows.createFirst' | t }}</button>
     </div>
   } @else {
     <ul class="cards">
       @for (item of items(); track item.show.id) {
         <li class="panel card">
-          <a class="preview" [routerLink]="['/play', item.show.id]" [attr.aria-label]="'Play ' + item.show.name">
+          <a class="preview" [routerLink]="['/play', item.show.id]" [attr.aria-label]="'shows.playShow' | t: { name: item.show.name }">
             <app-pixel-grid [grid]="item.grid" fit="contain" />
             <span class="play-overlay"><mat-icon svgIcon="play" /></span>
           </a>
           <div class="meta">
             <div class="title-row">
               <a class="name" [routerLink]="['/shows', item.show.id]">{{ item.show.name }}</a>
-              <a matIconButton [routerLink]="['/shows', item.show.id]" matTooltip="Edit" aria-label="Edit">
+              <a matIconButton [routerLink]="['/shows', item.show.id]" [matTooltip]="'common.edit' | t" [attr.aria-label]="'common.edit' | t">
                 <mat-icon svgIcon="pencil" />
               </a>
-              <button matIconButton [matMenuTriggerFor]="menu" aria-label="More actions">
+              <button matIconButton [matMenuTriggerFor]="menu" [attr.aria-label]="'common.moreActions' | t">
                 <mat-icon svgIcon="dots-vertical" />
               </button>
               <mat-menu #menu="matMenu" xPosition="before">
-                <a mat-menu-item [routerLink]="['/play', item.show.id]"><mat-icon svgIcon="play" />Play</a>
-                <a mat-menu-item [routerLink]="['/shows', item.show.id]"><mat-icon svgIcon="pencil" />Edit</a>
-                <button mat-menu-item (click)="duplicate(item.show)"><mat-icon svgIcon="content-copy" />Duplicate</button>
-                <button mat-menu-item [matMenuTriggerFor]="exportMenu"><mat-icon svgIcon="download" />Export</button>
-                <button mat-menu-item (click)="delete(item.show)"><mat-icon svgIcon="delete" />Delete</button>
+                <a mat-menu-item [routerLink]="['/play', item.show.id]"><mat-icon svgIcon="play" />{{ 'common.play' | t }}</a>
+                <a mat-menu-item [routerLink]="['/shows', item.show.id]"><mat-icon svgIcon="pencil" />{{ 'common.edit' | t }}</a>
+                <button mat-menu-item (click)="duplicate(item.show)"><mat-icon svgIcon="content-copy" />{{ 'common.duplicate' | t }}</button>
+                <button mat-menu-item [matMenuTriggerFor]="exportMenu"><mat-icon svgIcon="download" />{{ 'shows.export' | t }}</button>
+                <button mat-menu-item (click)="delete(item.show)"><mat-icon svgIcon="delete" />{{ 'common.delete' | t }}</button>
               </mat-menu>
               <mat-menu #exportMenu="matMenu">
-                <button mat-menu-item (click)="export(item.show)">Blinkenlights show (.blinken.json)</button>
-                <button mat-menu-item (click)="exportMovie(item.show, 'blm')">Original movie (.blm)</button>
-                <button mat-menu-item (click)="exportMovie(item.show, 'bml')">Original markup (.bml)</button>
+                <button mat-menu-item (click)="export(item.show)">{{ 'shows.exportJson' | t }}</button>
+                <button mat-menu-item (click)="exportMovie(item.show, 'blm')">{{ 'shows.exportBlm' | t }}</button>
+                <button mat-menu-item (click)="exportMovie(item.show, 'bml')">{{ 'shows.exportBml' | t }}</button>
               </mat-menu>
             </div>
             <div class="chips">

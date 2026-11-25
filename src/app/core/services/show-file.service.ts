@@ -106,9 +106,9 @@ export class ShowFileService {
     try {
       data = JSON.parse(content);
     } catch {
-      throw new InvalidFileError('This is not a valid JSON file.');
+      throw new InvalidFileError('files.notJson');
     }
-    if (!isObject(data)) throw new InvalidFileError('Unexpected file content.');
+    if (!isObject(data)) throw new InvalidFileError('files.unexpected');
 
     if (data['format'] === 'blinkenlights-show') {
       assertShow(data['show']);
@@ -116,12 +116,12 @@ export class ShowFileService {
       return data as unknown as ShowFile;
     }
     if (data['format'] === 'blinkenlights-backup') {
-      if (!Array.isArray(data['shows'])) throw new InvalidFileError('The backup has no shows list.');
+      if (!Array.isArray(data['shows'])) throw new InvalidFileError('files.noShowsList');
       (data['shows'] as unknown[]).forEach(assertShow);
       assertShapes(data['shapes']);
       return data as unknown as BackupFile;
     }
-    throw new InvalidFileError('This is not a Blinkenlights file.');
+    throw new InvalidFileError('files.notBlinkenlights');
   }
 
   /**
@@ -192,32 +192,32 @@ function isObject(value: unknown): value is Record<string, unknown> {
 }
 
 function assertShow(value: unknown): asserts value is Show {
-  if (!isObject(value)) throw new InvalidFileError('The file contains no show.');
+  if (!isObject(value)) throw new InvalidFileError('files.noShow');
   const size = value['size'];
   if (typeof value['id'] !== 'string' || typeof value['name'] !== 'string')
-    throw new InvalidFileError('A show is missing its id or name.');
+    throw new InvalidFileError('files.showMissingName');
   if (!isObject(size) || !isPositiveInt(size['width']) || !isPositiveInt(size['height']))
-    throw new InvalidFileError(`Show "${value['name']}" has no valid grid size.`);
-  if (!Array.isArray(value['scenes'])) throw new InvalidFileError(`Show "${value['name']}" has no scenes.`);
+    throw new InvalidFileError('files.showNoSize', { name: String(value['name']) });
+  if (!Array.isArray(value['scenes'])) throw new InvalidFileError('files.showNoScenes', { name: String(value['name']) });
   for (const scene of value['scenes'] as unknown[]) {
     if (!isObject(scene) || !Array.isArray(scene['frames']))
-      throw new InvalidFileError(`Show "${value['name']}" contains an invalid scene.`);
+      throw new InvalidFileError('files.invalidScene', { name: String(value['name']) });
     for (const frame of scene['frames'] as unknown[]) {
       if (!isObject(frame) || typeof frame['duration'] !== 'number' || !Array.isArray(frame['objects']))
-        throw new InvalidFileError(`Show "${value['name']}" contains an invalid frame.`);
+        throw new InvalidFileError('files.invalidFrame', { name: String(value['name']) });
       for (const object of frame['objects'] as unknown[]) {
         if (!isObject(object) || !['shape', 'text', 'bitmap'].includes(object['type'] as string) || !isObject(object['position']))
-          throw new InvalidFileError(`Show "${value['name']}" contains an unknown object.`);
+          throw new InvalidFileError('files.unknownObject', { name: String(value['name']) });
       }
     }
   }
 }
 
 function assertShapes(value: unknown): asserts value is Shape[] {
-  if (!Array.isArray(value)) throw new InvalidFileError('The file has no shapes list.');
+  if (!Array.isArray(value)) throw new InvalidFileError('files.noShapesList');
   for (const shape of value) {
     if (!isObject(shape) || typeof shape['id'] !== 'string' || !isObject(shape['size']) || !Array.isArray(shape['pattern']))
-      throw new InvalidFileError('The file contains an invalid shape.');
+      throw new InvalidFileError('files.invalidShape');
   }
 }
 

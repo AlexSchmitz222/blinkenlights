@@ -13,13 +13,16 @@ import { BasicDialogService } from '../../core/services/basic-dialog.service';
 import { HasUnsavedChanges } from '../../core/guards/unsaved-changes.guard';
 import { PixelGridComponent, PixelPointerEvent } from '../../shared/pixel-grid/pixel-grid.component';
 import { createId } from '../../core/utils/id';
+import { I18nService, TranslationKey } from '../../core/i18n/i18n.service';
+import { TranslatePipe } from '../../core/i18n/translate.pipe';
+import { shapeDeletionMessage } from '../shape-list/shape-deletion';
 
 export const SHAPE_MAX_SIZE = { width: 39, height: 21 };
 const NEW_SHAPE_SIZE = { width: 8, height: 8 };
 
 @Component({
   selector: 'app-shape-details',
-  imports: [RouterLink, MatButtonModule, MatIconModule, MatInputModule, MatFormFieldModule, MatTooltipModule, PixelGridComponent],
+  imports: [RouterLink, MatButtonModule, MatIconModule, MatInputModule, MatFormFieldModule, MatTooltipModule, PixelGridComponent, TranslatePipe],
   templateUrl: './shape-details.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './shape-details.component.scss',
@@ -34,12 +37,24 @@ export class ShapeDetailsComponent implements HasUnsavedChanges {
   private dialogs = inject(BasicDialogService);
   private snackBar = inject(MatSnackBar);
   private router = inject(Router);
+  private i18n = inject(I18nService);
 
   /** Route parameter (`/shapes/:shapeId`); 'new' creates a shape. */
   readonly shapeId = input.required<string>();
 
   readonly maxSize = SHAPE_MAX_SIZE;
   readonly dimensions = ['width', 'height'] as const;
+  readonly dimensionLabels: Record<'width' | 'height', TranslationKey> = { width: 'shapeEditor.width', height: 'shapeEditor.height' };
+  readonly tools: { icon: string; label: TranslationKey; action: () => void }[] = [
+    { icon: 'arrow-up', label: 'shapeEditor.moveUp', action: () => this.shift(0, -1) },
+    { icon: 'arrow-down', label: 'shapeEditor.moveDown', action: () => this.shift(0, 1) },
+    { icon: 'arrow-left', label: 'shapeEditor.moveLeft', action: () => this.shift(-1, 0) },
+    { icon: 'arrow-right', label: 'shapeEditor.moveRight', action: () => this.shift(1, 0) },
+    { icon: 'flip-horizontal', label: 'shapeEditor.flipHorizontal', action: () => this.flip('horizontal') },
+    { icon: 'flip-vertical', label: 'shapeEditor.flipVertical', action: () => this.flip('vertical') },
+    { icon: 'invert-colors', label: 'shapeEditor.invert', action: () => this.invert() },
+    { icon: 'eraser', label: 'shapeEditor.clear', action: () => this.clear() },
+  ];
   readonly shape = signal<Shape | null>(null);
   readonly isNew = computed(() => this.shapeId() === 'new');
   readonly debug = signal(false);
@@ -65,11 +80,11 @@ export class ShapeDetailsComponent implements HasUnsavedChanges {
 
   readonly activeCount = computed(() => this.shape()?.pattern.filter(p => p.active).length ?? 0);
 
-  readonly nameError = computed(() => {
+  readonly nameError = computed<TranslationKey | null>(() => {
     const shape = this.shape();
     if (!shape) return null;
-    if (!shape.name.trim()) return 'Name is required';
-    if (this.storage.isShapeNameTaken(shape.name, shape.id)) return 'Another shape already uses this name';
+    if (!shape.name.trim()) return 'shapeEditor.nameRequired';
+    if (this.storage.isShapeNameTaken(shape.name, shape.id)) return 'shapeEditor.nameTaken';
     return null;
   });
 
@@ -91,7 +106,7 @@ export class ShapeDetailsComponent implements HasUnsavedChanges {
     if (id === 'new') {
       shape = {
         id: '',
-        name: this.uniqueName('New shape'),
+        name: this.uniqueName(this.i18n.t('shapeEditor.defaultName')),
         description: '',
         size: { ...NEW_SHAPE_SIZE },
         pattern: [],
@@ -156,7 +171,7 @@ export class ShapeDetailsComponent implements HasUnsavedChanges {
   clear() {
     if (this.activeCount() === 0) return;
     this.dialogs
-      .showBooleanDialog('Clear shape?', 'All pixels will be switched off.', { confirmLabel: 'Clear' })
+      .showBooleanDialog(this.i18n.t('shapeEditor.clearTitle'), this.i18n.t('shapeEditor.clearMessage'), { confirmLabel: this.i18n.t('shapeEditor.clear') })
       .subscribe(ok => ok && this.edit(s => ({ ...s, pattern: [] })));
   }
 
@@ -167,7 +182,7 @@ export class ShapeDetailsComponent implements HasUnsavedChanges {
     if (!shape) return;
     const error = this.nameError();
     if (error) {
-      this.snackBar.open(error, undefined, { duration: 3000 });
+      this.snackBar.open(this.i18n.t(error), undefined, { duration: 3000 });
       return;
     }
 
@@ -180,7 +195,7 @@ export class ShapeDetailsComponent implements HasUnsavedChanges {
     this.storage.saveShape(toSave);
     this.shape.set(toSave);
     this.savedSnapshot.set(JSON.stringify(toSave));
-    this.snackBar.open(`Saved "${toSave.name}"`, undefined, { duration: 2000 });
+    this.snackBar.open(this.i18n.t('common.saved', { name: toSave.name }), undefined, { duration: 2000 });
 
     if (this.isNew()) {
       this.router.navigate(['/shapes', toSave.id], { replaceUrl: true });
@@ -191,7 +206,7 @@ export class ShapeDetailsComponent implements HasUnsavedChanges {
     const shape = this.shape();
     if (!shape) return;
     this.dialogs
-      .showBooleanDialog(`Delete "${shape.name}"?`, this.storage.describeShapeDeletion(shape.id), { confirmLabel: 'Delete' })
+      .showBooleanDialog(this.i18n.t('common.deleteTitle', { name: shape.name }), shapeDeletionMessage(this.i18n, this.storage, shape.id), { confirmLabel: this.i18n.t('common.delete') })
       .subscribe(ok => {
         if (!ok) return;
         if (shape.id) this.storage.deleteShape(shape.id);

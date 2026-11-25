@@ -8,10 +8,12 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ThemeMode, ThemeService } from './core/theme/theme.service';
 import { LogoComponent } from './shared/logo/logo.component';
+import { I18nService, LANGUAGES, TranslationKey } from './core/i18n/i18n.service';
+import { TranslatePipe } from './core/i18n/translate.pipe';
 
 @Component({
   selector: 'app-root',
-  imports: [LogoComponent, RouterOutlet, RouterLink, RouterLinkActive, MatButtonModule, MatIconModule, MatMenuModule, MatTooltipModule],
+  imports: [LogoComponent, TranslatePipe, RouterOutlet, RouterLink, RouterLinkActive, MatButtonModule, MatIconModule, MatMenuModule, MatTooltipModule],
   templateUrl: './app.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './app.component.scss'
@@ -20,11 +22,13 @@ export class AppComponent {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   readonly theme = inject(ThemeService);
+  readonly i18n = inject(I18nService);
+  readonly languages = LANGUAGES;
 
-  readonly themeOptions: { mode: ThemeMode; label: string; icon: string }[] = [
-    { mode: 'system', label: 'System', icon: 'theme-light-dark' },
-    { mode: 'light', label: 'Light', icon: 'white-balance-sunny' },
-    { mode: 'dark', label: 'Dark', icon: 'weather-night' },
+  readonly themeOptions: { mode: ThemeMode; label: TranslationKey; icon: string }[] = [
+    { mode: 'system', label: 'theme.system', icon: 'theme-light-dark' },
+    { mode: 'light', label: 'theme.light', icon: 'white-balance-sunny' },
+    { mode: 'dark', label: 'theme.dark', icon: 'weather-night' },
   ];
 
   readonly themeIcon = computed(() => this.themeOptions.find(o => o.mode === this.theme.mode())!.icon);

@@ -1,6 +1,7 @@
 import { CanDeactivateFn } from '@angular/router';
 import { EnvironmentInjector, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
+import { I18nService } from '../i18n/i18n.service';
 
 export interface HasUnsavedChanges {
   hasUnsavedChanges(): boolean;
@@ -14,13 +15,14 @@ export interface HasUnsavedChanges {
 export const unsavedChangesGuard: CanDeactivateFn<HasUnsavedChanges> = async component => {
   if (!component.hasUnsavedChanges()) return true;
   const injector = inject(EnvironmentInjector);
+  const i18n = inject(I18nService);
   const { BasicDialogService } = await import('../services/basic-dialog.service');
   return (
     (await firstValueFrom(
       injector.get(BasicDialogService).showBooleanDialog(
-        'Discard changes?',
-        'You have unsaved changes. If you leave now, they will be lost.',
-        { confirmLabel: 'Discard', cancelLabel: 'Keep editing' },
+        i18n.t('unsavedGuard.title'),
+        i18n.t('unsavedGuard.message'),
+        { confirmLabel: i18n.t('unsavedGuard.discard'), cancelLabel: i18n.t('unsavedGuard.keep') },
       ),
     )) === true
   );

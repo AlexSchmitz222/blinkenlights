@@ -1,28 +1,44 @@
 @if (showChrome()) {
   <header class="topbar">
-    <a class="brand" routerLink="/" aria-label="Blinkenlights home">
+    <a class="brand" routerLink="/" [attr.aria-label]="'nav.home' | t">
       <app-logo [cell]="4" />
       <span>blinkenlights</span>
     </a>
     <nav>
       <a routerLink="/shows" routerLinkActive="active">
         <mat-icon svgIcon="movie-open-outline" />
-        <span>Shows</span>
+        <span>{{ 'nav.shows' | t }}</span>
       </a>
       <a routerLink="/shapes" routerLinkActive="active">
         <mat-icon svgIcon="shape-outline" />
-        <span>Shapes</span>
+        <span>{{ 'nav.shapes' | t }}</span>
       </a>
     </nav>
     <span class="spacer"></span>
-    <button matIconButton [matMenuTriggerFor]="themeMenu" matTooltip="Theme" aria-label="Choose theme">
+
+    <button matButton class="lang-button" [matMenuTriggerFor]="langMenu" [matTooltip]="'language.label' | t" [attr.aria-label]="'language.choose' | t">
+      <mat-icon svgIcon="translate" />
+      {{ i18n.lang().toUpperCase() }}
+    </button>
+    <mat-menu #langMenu="matMenu" xPosition="before">
+      @for (language of languages; track language.code) {
+        <button mat-menu-item (click)="i18n.setLanguage(language.code)" [attr.lang]="language.code">
+          <span>{{ language.label }}</span>
+          @if (i18n.lang() === language.code) {
+            <mat-icon svgIcon="check" class="menu-check" />
+          }
+        </button>
+      }
+    </mat-menu>
+
+    <button matIconButton [matMenuTriggerFor]="themeMenu" [matTooltip]="'theme.label' | t" [attr.aria-label]="'theme.choose' | t">
       <mat-icon [svgIcon]="themeIcon()" />
     </button>
     <mat-menu #themeMenu="matMenu" xPosition="before">
       @for (option of themeOptions; track option.mode) {
         <button mat-menu-item (click)="theme.setMode(option.mode)">
           <mat-icon [svgIcon]="option.icon" />
-          <span>{{ option.label }}</span>
+          <span>{{ option.label | t }}</span>
           @if (theme.mode() === option.mode) {
             <mat-icon svgIcon="check" class="menu-check" />
           }

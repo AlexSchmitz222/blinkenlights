@@ -7,6 +7,8 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { Position } from '../../core/interfaces/grid.interface';
+import { I18nService, TranslationKey } from '../../core/i18n/i18n.service';
+import { TranslatePipe } from '../../core/i18n/translate.pipe';
 
 export type GeneratorKind = 'scroll' | 'move' | 'blink';
 
@@ -25,72 +27,72 @@ export type GeneratorConfig = ScrollConfig | MoveConfig | BlinkConfig;
 
 @Component({
   selector: 'app-generator-dialog',
-  imports: [MatDialogModule, MatButtonModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatSlideToggleModule, FormsModule],
+  imports: [MatDialogModule, MatButtonModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatSlideToggleModule, FormsModule, TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <h2 mat-dialog-title>{{ title }}</h2>
+    <h2 mat-dialog-title>{{ title | t }}</h2>
     <mat-dialog-content>
-      <p class="muted intro">{{ intro }}</p>
+      <p class="muted intro">{{ intro | t }}</p>
       <form id="generator" (ngSubmit)="create()" class="form">
         @switch (data.kind) {
           @case ('scroll') {
             <mat-form-field appearance="outline" class="wide">
-              <mat-label>Text</mat-label>
+              <mat-label>{{ 'generator.text' | t }}</mat-label>
               <input matInput name="text" [(ngModel)]="scroll.text" required cdkFocusInitial />
             </mat-form-field>
             <mat-form-field appearance="outline">
-              <mat-label>ms per step</mat-label>
+              <mat-label>{{ 'generator.msPerStep' | t }}</mat-label>
               <input matInput type="number" name="step" min="20" [(ngModel)]="scroll.stepDuration" />
             </mat-form-field>
             <mat-form-field appearance="outline">
-              <mat-label>Row (y)</mat-label>
+              <mat-label>{{ 'generator.row' | t }}</mat-label>
               <input matInput type="number" name="y" [(ngModel)]="scroll.y" />
             </mat-form-field>
             <mat-form-field appearance="outline">
-              <mat-label>Direction</mat-label>
+              <mat-label>{{ 'generator.direction' | t }}</mat-label>
               <mat-select name="direction" [(ngModel)]="scroll.direction">
-                <mat-option value="left">Right → left</mat-option>
-                <mat-option value="right">Left → right</mat-option>
+                <mat-option value="left">{{ 'generator.rightToLeft' | t }}</mat-option>
+                <mat-option value="right">{{ 'generator.leftToRight' | t }}</mat-option>
               </mat-select>
             </mat-form-field>
-            <mat-slide-toggle name="inverted" [(ngModel)]="scroll.inverted">Inverted</mat-slide-toggle>
+            <mat-slide-toggle name="inverted" [(ngModel)]="scroll.inverted">{{ 'generator.inverted' | t }}</mat-slide-toggle>
           }
           @case ('move') {
             <mat-form-field appearance="outline">
-              <mat-label>Target x</mat-label>
+              <mat-label>{{ 'generator.targetX' | t }}</mat-label>
               <input matInput type="number" name="x" [(ngModel)]="move.to.x" cdkFocusInitial />
             </mat-form-field>
             <mat-form-field appearance="outline">
-              <mat-label>Target y</mat-label>
+              <mat-label>{{ 'generator.targetY' | t }}</mat-label>
               <input matInput type="number" name="y" [(ngModel)]="move.to.y" />
             </mat-form-field>
             <mat-form-field appearance="outline">
-              <mat-label>Steps</mat-label>
+              <mat-label>{{ 'generator.steps' | t }}</mat-label>
               <input matInput type="number" name="steps" min="1" max="500" [(ngModel)]="move.steps" />
             </mat-form-field>
             <mat-form-field appearance="outline">
-              <mat-label>ms per step</mat-label>
+              <mat-label>{{ 'generator.msPerStep' | t }}</mat-label>
               <input matInput type="number" name="step" min="20" [(ngModel)]="move.stepDuration" />
             </mat-form-field>
           }
           @case ('blink') {
             <mat-form-field appearance="outline">
-              <mat-label>Times</mat-label>
+              <mat-label>{{ 'generator.times' | t }}</mat-label>
               <input matInput type="number" name="times" min="1" max="100" [(ngModel)]="blink.times" cdkFocusInitial />
             </mat-form-field>
             <mat-form-field appearance="outline">
-              <mat-label>Between</mat-label>
+              <mat-label>{{ 'generator.between' | t }}</mat-label>
               <mat-select name="mode" [(ngModel)]="blink.mode">
-                <mat-option value="off">Off</mat-option>
-                <mat-option value="invert">Inverted</mat-option>
+                <mat-option value="off">{{ 'generator.off' | t }}</mat-option>
+                <mat-option value="invert">{{ 'generator.invertedOption' | t }}</mat-option>
               </mat-select>
             </mat-form-field>
             <mat-form-field appearance="outline">
-              <mat-label>On (ms)</mat-label>
+              <mat-label>{{ 'generator.on' | t }}</mat-label>
               <input matInput type="number" name="on" min="20" [(ngModel)]="blink.onDuration" />
             </mat-form-field>
             <mat-form-field appearance="outline">
-              <mat-label>Off (ms)</mat-label>
+              <mat-label>{{ 'generator.offMs' | t }}</mat-label>
               <input matInput type="number" name="off" min="20" [(ngModel)]="blink.offDuration" />
             </mat-form-field>
           }
@@ -98,8 +100,8 @@ export type GeneratorConfig = ScrollConfig | MoveConfig | BlinkConfig;
       </form>
     </mat-dialog-content>
     <mat-dialog-actions align="end">
-      <button matButton type="button" mat-dialog-close>Cancel</button>
-      <button matButton="filled" type="submit" form="generator">Generate</button>
+      <button matButton type="button" mat-dialog-close>{{ 'common.cancel' | t }}</button>
+      <button matButton="filled" type="submit" form="generator">{{ 'generator.generate' | t }}</button>
     </mat-dialog-actions>
   `,
   styles: `
@@ -113,20 +115,16 @@ export class GeneratorDialogComponent {
   readonly data = inject<GeneratorDialogData>(MAT_DIALOG_DATA);
   private dialogRef = inject<MatDialogRef<GeneratorDialogComponent, GeneratorConfig>>(MatDialogRef);
 
-  readonly scroll: ScrollConfig = { kind: 'scroll', text: 'Hello!', stepDuration: 70, y: this.data.defaultY ?? 0, direction: 'left', inverted: false };
+  readonly scroll: ScrollConfig = { kind: 'scroll', text: inject(I18nService).t('generator.defaultText'), stepDuration: 70, y: this.data.defaultY ?? 0, direction: 'left', inverted: false };
   readonly move: MoveConfig = { kind: 'move', to: { x: (this.data.from?.x ?? 0) + 10, y: this.data.from?.y ?? 0 }, steps: 10, stepDuration: 80 };
   readonly blink: BlinkConfig = { kind: 'blink', times: 3, onDuration: 300, offDuration: 300, mode: 'off' };
 
-  get title(): string {
-    return { scroll: 'Scrolling text', move: 'Move object', blink: 'Blink' }[this.data.kind];
+  get title(): TranslationKey {
+    return (({ scroll: 'generator.scrollTitle', move: 'generator.moveTitle', blink: 'generator.blinkTitle' }) as const)[this.data.kind];
   }
 
-  get intro(): string {
-    return {
-      scroll: 'Adds a new scene in which the text scrolls across the grid, one pixel per frame.',
-      move: 'Adds frames after the current one in which the selected object travels to the target. Everything else in the frame stays put.',
-      blink: 'Adds frames after the current one that switch the current frame on and off.',
-    }[this.data.kind];
+  get intro(): TranslationKey {
+    return (({ scroll: 'generator.scrollIntro', move: 'generator.moveIntro', blink: 'generator.blinkIntro' }) as const)[this.data.kind];
   }
 
   create() {

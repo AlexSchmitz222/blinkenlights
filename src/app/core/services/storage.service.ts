@@ -59,14 +59,6 @@ export class StorageService {
     );
   }
 
-  /** Confirmation text for deleting a shape, mentioning shows that use it. */
-  describeShapeDeletion(shapeId: string): string {
-    const shows = this.showsUsingShape(shapeId);
-    if (shows.length === 0) return 'This cannot be undone.';
-    const names = shows.slice(0, 3).map(s => `"${s.name}"`).join(', ') + (shows.length > 3 ? ` and ${shows.length - 3} more` : '');
-    return `It is used in ${names}. It will disappear from ${shows.length === 1 ? 'that show' : 'those shows'}.`;
-  }
-
   // --- shows -----------------------------------------------------------------------------------
 
   getShow(id: string): Show | undefined {

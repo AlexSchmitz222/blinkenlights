@@ -1,41 +1,41 @@
 <div class="page">
   <header class="page-header">
-    <h1>Shapes</h1>
+    <h1>{{ 'shapes.title' | t }}</h1>
     <span class="chip">{{ items().length }}</span>
     <span class="spacer"></span>
     <a matButton="filled" routerLink="/shapes/new">
       <mat-icon svgIcon="plus" />
-      New shape
+      {{ 'shapes.newShape' | t }}
     </a>
   </header>
 
   @if (items().length === 0) {
     <div class="panel empty-state">
-      <p>No shapes yet.</p>
-      <a matButton="outlined" routerLink="/shapes/new">Draw your first shape</a>
+      <p>{{ 'shapes.empty' | t }}</p>
+      <a matButton="outlined" routerLink="/shapes/new">{{ 'shapes.drawFirst' | t }}</a>
     </div>
   } @else {
     <ul class="cards">
       @for (item of items(); track item.shape.id) {
         <li class="panel card">
-          <a class="preview" [routerLink]="['/shapes', item.shape.id]" [attr.aria-label]="'Edit ' + item.shape.name">
+          <a class="preview" [routerLink]="['/shapes', item.shape.id]" [attr.aria-label]="'shapes.editShape' | t: { name: item.shape.name }">
             <app-pixel-grid [grid]="item.grid" fit="contain" />
           </a>
           <div class="meta">
             <div class="title-row">
               <a class="name" [routerLink]="['/shapes', item.shape.id]">{{ item.shape.name }}</a>
-              <button matIconButton [matMenuTriggerFor]="menu" aria-label="More actions">
+              <button matIconButton [matMenuTriggerFor]="menu" [attr.aria-label]="'common.moreActions' | t">
                 <mat-icon svgIcon="dots-vertical" />
               </button>
               <mat-menu #menu="matMenu" xPosition="before">
                 <a mat-menu-item [routerLink]="['/shapes', item.shape.id]">
-                  <mat-icon svgIcon="pencil" />Edit
+                  <mat-icon svgIcon="pencil" />{{ 'common.edit' | t }}
                 </a>
                 <button mat-menu-item (click)="duplicate(item.shape)">
-                  <mat-icon svgIcon="content-copy" />Duplicate
+                  <mat-icon svgIcon="content-copy" />{{ 'common.duplicate' | t }}
                 </button>
                 <button mat-menu-item (click)="delete(item.shape)">
-                  <mat-icon svgIcon="delete" />Delete
+                  <mat-icon svgIcon="delete" />{{ 'common.delete' | t }}
                 </button>
               </mat-menu>
             </div>

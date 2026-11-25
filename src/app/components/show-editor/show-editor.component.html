@@ -2,37 +2,37 @@
   <div class="editor">
     <!-- toolbar -->
     <header class="editor-bar">
-      <a matIconButton routerLink="/shows" matTooltip="Back to shows" aria-label="Back to shows">
+      <a matIconButton routerLink="/shows" [matTooltip]="'common.backToShows' | t" [attr.aria-label]="'common.backToShows' | t">
         <mat-icon svgIcon="arrow-left" />
       </a>
-      <input class="title-input" [value]="show.name" (input)="setName($any($event.target).value)" aria-label="Show name" maxlength="60" />
+      <input class="title-input" [value]="show.name" (input)="setName($any($event.target).value)" [attr.aria-label]="'editor.showName' | t" maxlength="60" />
       @if (dirty()) {
-        <span class="chip unsaved">unsaved</span>
+        <span class="chip unsaved">{{ 'common.unsaved' | t }}</span>
       }
       <span class="spacer"></span>
-      <button matIconButton (click)="undo()" [disabled]="!canUndo()" matTooltip="Undo (Ctrl + Z)" aria-label="Undo">
+      <button matIconButton (click)="undo()" [disabled]="!canUndo()" [matTooltip]="'editor.undoTooltip' | t" [attr.aria-label]="'common.undo' | t">
         <mat-icon svgIcon="undo" />
       </button>
-      <button matIconButton (click)="redo()" [disabled]="!canRedo()" matTooltip="Redo (Ctrl + Shift + Z)" aria-label="Redo">
+      <button matIconButton (click)="redo()" [disabled]="!canRedo()" [matTooltip]="'editor.redoTooltip' | t" [attr.aria-label]="'common.redo' | t">
         <mat-icon svgIcon="redo" />
       </button>
       <span class="divider"></span>
-      <button matButton (click)="togglePreview()" matTooltip="Space">
+      <button matButton (click)="togglePreview()" [matTooltip]="'shortcuts.space' | t">
         <mat-icon [svgIcon]="previewing() ? 'pause' : 'play'" />
-        {{ previewing() ? 'Pause' : 'Preview' }}
+        {{ (previewing() ? 'common.pause' : 'editor.preview') | t }}
       </button>
-      <button matIconButton [matMenuTriggerFor]="showMenu" aria-label="More">
+      <button matIconButton [matMenuTriggerFor]="showMenu" [attr.aria-label]="'common.more' | t">
         <mat-icon svgIcon="dots-vertical" />
       </button>
       <mat-menu #showMenu="matMenu" xPosition="before">
-        <a mat-menu-item [routerLink]="['/play', show.id]"><mat-icon svgIcon="fullscreen" />Open in player</a>
-        <button mat-menu-item (click)="export()"><mat-icon svgIcon="download" />Export (.blinken.json)</button>
-        <button mat-menu-item (click)="exportMovie('blm')"><mat-icon svgIcon="download" />Export as original movie (.blm)</button>
-        <button mat-menu-item (click)="exportMovie('bml')"><mat-icon svgIcon="download" />Export as original markup (.bml)</button>
+        <a mat-menu-item [routerLink]="['/play', show.id]"><mat-icon svgIcon="fullscreen" />{{ 'editor.openInPlayer' | t }}</a>
+        <button mat-menu-item (click)="export()"><mat-icon svgIcon="download" />{{ 'editor.exportJson' | t }}</button>
+        <button mat-menu-item (click)="exportMovie('blm')"><mat-icon svgIcon="download" />{{ 'editor.exportBlm' | t }}</button>
+        <button mat-menu-item (click)="exportMovie('bml')"><mat-icon svgIcon="download" />{{ 'editor.exportBml' | t }}</button>
       </mat-menu>
-      <button matButton="filled" (click)="save()" [disabled]="!dirty()" matTooltip="Ctrl + S">
+      <button matButton="filled" (click)="save()" [disabled]="!dirty()" [matTooltip]="'shortcuts.save' | t">
         <mat-icon svgIcon="content-save" />
-        Save
+        {{ 'common.save' | t }}
       </button>
     </header>
 
@@ -40,39 +40,39 @@
       <!-- library -->
       <aside class="library">
         <section>
-          <h2 class="panel-title">Add</h2>
+          <h2 class="panel-title">{{ 'editor.add' | t }}</h2>
           <button class="lib-item text-item" (click)="addText()" [disabled]="!currentFrame()">
             <mat-icon svgIcon="format-text" />
-            <span>Text</span>
+            <span>{{ 'editor.text' | t }}</span>
           </button>
         </section>
 
         <section>
-          <h2 class="panel-title">Generate</h2>
+          <h2 class="panel-title">{{ 'editor.generate' | t }}</h2>
           <div class="gen-list">
-            <button matButton (click)="openGenerator('scroll')"><mat-icon svgIcon="text-box-outline" />Scrolling text</button>
-            <button matButton (click)="openGenerator('move')" [disabled]="!selectedObject()" matTooltip="Select an object first" [matTooltipDisabled]="!!selectedObject()">
-              <mat-icon svgIcon="cursor-move" />Move object
+            <button matButton (click)="openGenerator('scroll')"><mat-icon svgIcon="text-box-outline" />{{ 'editor.scrollingText' | t }}</button>
+            <button matButton (click)="openGenerator('move')" [disabled]="!selectedObject()" [matTooltip]="'editor.selectObjectFirst' | t" [matTooltipDisabled]="!!selectedObject()">
+              <mat-icon svgIcon="cursor-move" />{{ 'editor.moveObject' | t }}
             </button>
-            <button matButton (click)="openGenerator('blink')" [disabled]="!currentFrame()"><mat-icon svgIcon="magic-staff" />Blink frame</button>
+            <button matButton (click)="openGenerator('blink')" [disabled]="!currentFrame()"><mat-icon svgIcon="magic-staff" />{{ 'editor.blinkFrame' | t }}</button>
           </div>
         </section>
 
         <section class="shapes">
           <div class="section-head">
-            <h2 class="panel-title">Shapes</h2>
-            <a matIconButton routerLink="/shapes/new" matTooltip="New shape" aria-label="New shape" class="small">
+            <h2 class="panel-title">{{ 'editor.shapes' | t }}</h2>
+            <a matIconButton routerLink="/shapes/new" [matTooltip]="'editor.newShape' | t" [attr.aria-label]="'editor.newShape' | t" class="small">
               <mat-icon svgIcon="plus" />
             </a>
           </div>
           <div class="shape-grid">
             @for (item of shapes(); track item.shape.id) {
-              <button class="lib-item shape-item" (click)="addShape(item.shape)" [disabled]="!currentFrame()" [matTooltip]="'Add ' + item.shape.name">
+              <button class="lib-item shape-item" (click)="addShape(item.shape)" [disabled]="!currentFrame()" [matTooltip]="'editor.addShape' | t: { name: item.shape.name }">
                 <app-grid-thumb [grid]="item.grid" [scale]="3" />
                 <span>{{ item.shape.name }}</span>
               </button>
             } @empty {
-              <p class="muted small-text">No shapes yet.</p>
+              <p class="muted small-text">{{ 'editor.noShapes' | t }}</p>
             }
           </div>
         </section>
@@ -96,13 +96,13 @@
           <span>·</span>
           <span>{{ totalDuration() }}</span>
           @if (previewing()) {
-            <span class="live">● preview</span>
+            <span class="live">{{ 'editor.previewing' | t }}</span>
           }
           <span class="spacer"></span>
-          <button matIconButton (click)="onionSkin.set(!onionSkin())" [class.active]="onionSkin()" matTooltip="Onion skin: show previous frame (O)" aria-label="Onion skin">
+          <button matIconButton (click)="onionSkin.set(!onionSkin())" [class.active]="onionSkin()" [matTooltip]="'editor.onionSkin' | t" [attr.aria-label]="'editor.onionSkinLabel' | t">
             <mat-icon svgIcon="layers-outline" />
           </button>
-          <button matIconButton (click)="debug.set(!debug())" [class.active]="debug()" matTooltip="Show coordinates" aria-label="Show coordinates">
+          <button matIconButton (click)="debug.set(!debug())" [class.active]="debug()" [matTooltip]="'common.showCoordinates' | t" [attr.aria-label]="'common.showCoordinates' | t">
             <mat-icon svgIcon="grid" />
           </button>
         </footer>
@@ -115,16 +115,16 @@
             <div class="section-head">
               <h2 class="panel-title">
                 <mat-icon [svgIcon]="objectIcon(object)" class="inline-icon" />
-                {{ object.type }}
+                {{ objectTypeLabel(object) | t }}
               </h2>
-              <button matIconButton class="small" (click)="selectedId.set(null)" matTooltip="Deselect (Esc)" aria-label="Deselect">
+              <button matIconButton class="small" (click)="selectedId.set(null)" [matTooltip]="'common.deselect' | t" [attr.aria-label]="'common.deselect' | t">
                 <mat-icon svgIcon="close" />
               </button>
             </div>
 
             @if (object.type === 'shape') {
               <mat-form-field appearance="outline" class="field" subscriptSizing="dynamic">
-                <mat-label>Shape</mat-label>
+                <mat-label>{{ 'editor.shape' | t }}</mat-label>
                 <mat-select [value]="object.shapeId" (selectionChange)="setShapeId($event.value)">
                   @for (item of shapes(); track item.shape.id) {
                     <mat-option [value]="item.shape.id">{{ item.shape.name }}</mat-option>
@@ -133,10 +133,10 @@
               </mat-form-field>
             }
             @if (asText(object); as textObject) {
-              <label class="label">Text</label>
+              <label class="label">{{ 'editor.text' | t }}</label>
               <textarea class="input" rows="2" [value]="textObject.text" (input)="setText($any($event.target).value)"></textarea>
               <label class="row">
-                <span>Letter spacing</span>
+                <span>{{ 'editor.letterSpacing' | t }}</span>
                 <input class="input num" type="number" min="0" max="10" [value]="textObject.spacing ?? 1" (change)="setSpacing(+$any($event.target).value)" />
               </label>
             }
@@ -145,20 +145,20 @@
               <label><span>x</span><input class="input num" type="number" [value]="object.position.x" (input)="setPosition('x', +$any($event.target).value)" /></label>
               <label><span>y</span><input class="input num" type="number" [value]="object.position.y" (input)="setPosition('y', +$any($event.target).value)" /></label>
             </div>
-            <mat-slide-toggle [checked]="!!object.inverted" (change)="setInverted($event.checked)">Inverted</mat-slide-toggle>
+            <mat-slide-toggle [checked]="!!object.inverted" (change)="setInverted($event.checked)">{{ 'editor.inverted' | t }}</mat-slide-toggle>
 
             <div class="actions">
-              <button matIconButton (click)="reorderSelected(1)" matTooltip="Bring forward" aria-label="Bring forward"><mat-icon svgIcon="arrow-up" /></button>
-              <button matIconButton (click)="reorderSelected(-1)" matTooltip="Send backward" aria-label="Send backward"><mat-icon svgIcon="arrow-down" /></button>
-              <button matIconButton (click)="duplicateSelected()" matTooltip="Duplicate" aria-label="Duplicate object"><mat-icon svgIcon="content-copy" /></button>
+              <button matIconButton (click)="reorderSelected(1)" [matTooltip]="'editor.bringForward' | t" [attr.aria-label]="'editor.bringForward' | t"><mat-icon svgIcon="arrow-up" /></button>
+              <button matIconButton (click)="reorderSelected(-1)" [matTooltip]="'editor.sendBackward' | t" [attr.aria-label]="'editor.sendBackward' | t"><mat-icon svgIcon="arrow-down" /></button>
+              <button matIconButton (click)="duplicateSelected()" [matTooltip]="'common.duplicate' | t" [attr.aria-label]="'editor.duplicateObject' | t"><mat-icon svgIcon="content-copy" /></button>
               @if (multiSelection()) {
-                <button matIconButton (click)="applyObjectToSelection()" [matTooltip]="'Apply to the ' + selectedFrames().length + ' selected frames'" aria-label="Apply to selected frames"><mat-icon svgIcon="filmstrip" /></button>
+                <button matIconButton (click)="applyObjectToSelection()" [matTooltip]="'editor.applyToSelection' | t: { count: selectedFrames().length }" [attr.aria-label]="'editor.applyToSelection' | t: { count: selectedFrames().length }"><mat-icon svgIcon="filmstrip" /></button>
               } @else {
-                <button matIconButton (click)="applyToRestOfScene()" matTooltip="Apply to the rest of this scene" aria-label="Apply to rest of scene"><mat-icon svgIcon="chevron-right" /></button>
+                <button matIconButton (click)="applyToRestOfScene()" [matTooltip]="'editor.applyToRest' | t" [attr.aria-label]="'editor.applyToRest' | t"><mat-icon svgIcon="chevron-right" /></button>
               }
-              <button matIconButton (click)="deleteSelected()" matTooltip="Delete (Del)" aria-label="Delete object"><mat-icon svgIcon="delete" /></button>
+              <button matIconButton (click)="deleteSelected()" [matTooltip]="'editor.deleteObject' | t" [attr.aria-label]="'editor.deleteObject' | t"><mat-icon svgIcon="delete" /></button>
             </div>
-            <p class="muted small-text">Drag on the stage or use the arrow keys (Shift = 5 px).</p>
+            <p class="muted small-text">{{ 'editor.moveHint' | t }}</p>
           </section>
         }
 
@@ -166,40 +166,40 @@
           <section>
             @if (multiSelection()) {
               <div class="section-head">
-                <h2 class="panel-title">{{ selectedFrames().length }} frames selected</h2>
-                <button matIconButton class="small" (click)="collapseSelection()" matTooltip="Only the current frame (Esc)" aria-label="Clear frame selection">
+                <h2 class="panel-title">{{ 'editor.framesSelected' | t: { count: selectedFrames().length } }}</h2>
+                <button matIconButton class="small" (click)="collapseSelection()" [matTooltip]="'editor.onlyCurrentFrame' | t" [attr.aria-label]="'editor.clearFrameSelection' | t">
                   <mat-icon svgIcon="close" />
                 </button>
               </div>
-              <p class="muted small-text">Changes below apply to all of them · {{ selectionDurationTotal() }} in total</p>
+              <p class="muted small-text">{{ 'editor.appliesToAll' | t: { total: selectionDurationTotal() } }}</p>
             } @else {
-              <h2 class="panel-title">Frame {{ frameIndex() + 1 }} of {{ currentScene()?.frames?.length }}</h2>
+              <h2 class="panel-title">{{ 'editor.frameOf' | t: { index: frameIndex() + 1, count: currentScene()?.frames?.length ?? 0 } }}</h2>
             }
             <label class="row">
-              <span>Duration (ms)</span>
+              <span>{{ 'editor.duration' | t }}</span>
               <input
                 class="input num wide"
                 type="number"
                 min="0"
                 step="10"
                 [value]="selectionDuration() ?? ''"
-                [placeholder]="selectionDuration() === null ? 'mixed' : ''"
+                [placeholder]="selectionDuration() === null ? ('editor.mixed' | t) : ''"
                 [disabled]="selectionDuration() === 0"
                 (input)="setDuration(+$any($event.target).value)" />
             </label>
-            <mat-slide-toggle [checked]="selectionDuration() === 0" (change)="setHold($event.checked)">Hold until continued</mat-slide-toggle>
+            <mat-slide-toggle [checked]="selectionDuration() === 0" (change)="setHold($event.checked)">{{ 'editor.hold' | t }}</mat-slide-toggle>
             @if (!multiSelection()) {
-              <button matButton class="link-button" (click)="applyDurationToScene()">Use this duration for the whole scene</button>
+              <button matButton class="link-button" (click)="applyDurationToScene()">{{ 'editor.durationForScene' | t }}</button>
             }
             <div class="actions">
-              <button matButton (click)="duplicateFrames()" matTooltip="Ctrl + D"><mat-icon svgIcon="content-copy" />Duplicate</button>
-              <button matButton (click)="deleteFrames()" matTooltip="Del (with no object selected)"><mat-icon svgIcon="delete" />Delete</button>
+              <button matButton (click)="duplicateFrames()" [matTooltip]="'shortcuts.duplicate' | t"><mat-icon svgIcon="content-copy" />{{ 'common.duplicate' | t }}</button>
+              <button matButton (click)="deleteFrames()" [matTooltip]="'editor.deleteFramesTooltip' | t"><mat-icon svgIcon="delete" />{{ 'common.delete' | t }}</button>
             </div>
             @if (!multiSelection()) {
-              <p class="muted small-text tip">Tip: Ctrl + click or Shift + click frames in the timeline to edit several at once. Ctrl + A selects the whole scene.</p>
+              <p class="muted small-text tip">{{ 'editor.multiSelectTip' | t }}</p>
             }
 
-            <h3 class="panel-title sub">Objects in this frame</h3>
+            <h3 class="panel-title sub">{{ 'editor.objectsInFrame' | t }}</h3>
             <ul class="layers">
               @for (object of frame.objects.slice().reverse(); track object.id) {
                 <li>
@@ -210,28 +210,28 @@
                   </button>
                 </li>
               } @empty {
-                <li class="muted small-text">Empty frame. Add text or a shape from the left.</li>
+                <li class="muted small-text">{{ 'editor.emptyFrame' | t }}</li>
               }
             </ul>
           </section>
         }
 
         <section>
-          <h2 class="panel-title">Show</h2>
+          <h2 class="panel-title">{{ 'editor.show' | t }}</h2>
           <mat-form-field appearance="outline" class="field" subscriptSizing="dynamic">
-            <mat-label>Grid</mat-label>
+            <mat-label>{{ 'editor.grid' | t }}</mat-label>
             <mat-select [value]="presetId()" (selectionChange)="setPreset($event.value)">
               @for (preset of presets; track preset.id) {
                 <mat-option [value]="preset.id">{{ preset.name }} · {{ preset.size.width }}×{{ preset.size.height }}</mat-option>
               }
               @if (presetId() === 'custom') {
-                <mat-option value="custom" disabled>Custom · {{ show.size.width }}×{{ show.size.height }}</mat-option>
+                <mat-option value="custom" disabled>{{ 'presets.custom' | t }} · {{ show.size.width }}×{{ show.size.height }}</mat-option>
               }
             </mat-select>
           </mat-form-field>
-          <label class="label">Description</label>
+          <label class="label">{{ 'common.description' | t }}</label>
           <textarea class="input" rows="2" [value]="show.description" (input)="setDescription($any($event.target).value)"></textarea>
-          <mat-slide-toggle [checked]="show.loop" (change)="setLoop($event.checked)">Loop</mat-slide-toggle>
+          <mat-slide-toggle [checked]="show.loop" (change)="setLoop($event.checked)">{{ 'editor.loop' | t }}</mat-slide-toggle>
         </section>
       </aside>
     </div>
@@ -241,17 +241,17 @@
       @for (scene of show.scenes; track scene.id; let si = $index) {
         <section class="scene" [class.current]="si === sceneIndex()">
           <header class="scene-head">
-            <input class="scene-name" [value]="scene.name" (input)="renameScene(si, $any($event.target).value)" aria-label="Scene name" />
-            <span class="muted scene-meta">{{ scene.frames.length }} · {{ sceneStats()[si] }}</span>
-            <button matIconButton class="small" [matMenuTriggerFor]="sceneMenu" aria-label="Scene actions">
+            <input class="scene-name" [value]="scene.name" (input)="renameScene(si, $any($event.target).value)" [attr.aria-label]="'editor.sceneName' | t" />
+            <span class="muted scene-meta">{{ 'common.frames' | t: { count: scene.frames.length } }} · {{ sceneStats()[si] }}</span>
+            <button matIconButton class="small" [matMenuTriggerFor]="sceneMenu" [attr.aria-label]="'editor.sceneActions' | t">
               <mat-icon svgIcon="dots-vertical" />
             </button>
             <mat-menu #sceneMenu="matMenu">
-              <button mat-menu-item (click)="player.load(show); player.seekScene(si); player.play()"><mat-icon svgIcon="play" />Preview scene</button>
-              <button mat-menu-item (click)="duplicateScene(si)"><mat-icon svgIcon="content-copy" />Duplicate</button>
-              <button mat-menu-item (click)="moveScene(si, -1)" [disabled]="si === 0"><mat-icon svgIcon="arrow-left" />Move left</button>
-              <button mat-menu-item (click)="moveScene(si, 1)" [disabled]="si === show.scenes.length - 1"><mat-icon svgIcon="arrow-right" />Move right</button>
-              <button mat-menu-item (click)="deleteScene(si)"><mat-icon svgIcon="delete" />Delete</button>
+              <button mat-menu-item (click)="player.load(show); player.seekScene(si); player.play()"><mat-icon svgIcon="play" />{{ 'editor.previewScene' | t }}</button>
+              <button mat-menu-item (click)="duplicateScene(si)"><mat-icon svgIcon="content-copy" />{{ 'common.duplicate' | t }}</button>
+              <button mat-menu-item (click)="moveScene(si, -1)" [disabled]="si === 0"><mat-icon svgIcon="arrow-left" />{{ 'editor.moveLeft' | t }}</button>
+              <button mat-menu-item (click)="moveScene(si, 1)" [disabled]="si === show.scenes.length - 1"><mat-icon svgIcon="arrow-right" />{{ 'editor.moveRight' | t }}</button>
+              <button mat-menu-item (click)="deleteScene(si)"><mat-icon svgIcon="delete" />{{ 'common.delete' | t }}</button>
             </mat-menu>
           </header>
           <div
@@ -267,7 +267,7 @@
                 [cdkDragData]="fi"
                 tabindex="0"
                 role="button"
-                [attr.aria-label]="'Frame ' + (fi + 1)"
+                [attr.aria-label]="'editor.frameLabel' | t: { index: fi + 1 }"
                 [class.current]="si === sceneIndex() && fi === frameIndex() && !playhead()"
                 [class.selected]="selectedFrameIdSet().has(frame.id) && !playhead()"
                 [class.playing]="playhead()?.scene === si && playhead()?.frame === fi"
@@ -278,11 +278,11 @@
                 <app-grid-thumb [grid]="thumbs()[si][fi]" [scale]="3" />
                 <span class="frame-meta">
                   <span>{{ fi + 1 }}</span>
-                  <span>{{ frame.duration === 0 ? 'hold' : frame.duration }}</span>
+                  <span>{{ frame.duration === 0 ? ('editor.holdShort' | t) : frame.duration }}</span>
                 </span>
               </div>
             }
-            <button class="add-frame" (click)="addFrame(si)" matTooltip="Add frame (copy of the last one)" aria-label="Add frame" [style.width.px]="Math.min(thumbWidth(), 44)">
+            <button class="add-frame" (click)="addFrame(si)" [matTooltip]="'editor.addFrame' | t" [attr.aria-label]="'editor.addFrameLabel' | t" [style.width.px]="Math.min(thumbWidth(), 44)">
               <mat-icon svgIcon="plus" />
             </button>
           </div>
@@ -290,23 +290,23 @@
       }
       <button class="add-scene" (click)="addScene()">
         <mat-icon svgIcon="plus" />
-        Scene
+        {{ 'editor.scene' | t }}
       </button>
       <!-- context menu for frames (opened by right click) -->
       <span class="menu-anchor" #frameMenuTrigger="matMenuTrigger" [matMenuTriggerFor]="frameMenu" [style.left.px]="menuPosition().x" [style.top.px]="menuPosition().y"></span>
       <mat-menu #frameMenu="matMenu">
-        <button mat-menu-item (click)="duplicateFrames()"><mat-icon svgIcon="content-copy" />{{ multiSelection() ? 'Duplicate ' + selectedFrames().length + ' frames' : 'Duplicate' }} <span class="kbd-hint">Ctrl+D</span></button>
-        <button mat-menu-item (click)="insertEmptyFrameAfter()"><mat-icon svgIcon="plus" />Insert empty frame after</button>
-        <button mat-menu-item (click)="selectScene()"><mat-icon svgIcon="filmstrip" />Select whole scene <span class="kbd-hint">Ctrl+A</span></button>
-        <button mat-menu-item (click)="deleteFrames()"><mat-icon svgIcon="delete" />{{ multiSelection() ? 'Delete ' + selectedFrames().length + ' frames' : 'Delete' }}</button>
+        <button mat-menu-item (click)="duplicateFrames()"><mat-icon svgIcon="content-copy" />{{ multiSelection() ? ('editor.duplicateFrames' | t: { count: selectedFrames().length }) : ('common.duplicate' | t) }} <span class="kbd-hint">{{ 'shortcuts.duplicate' | t }}</span></button>
+        <button mat-menu-item (click)="insertEmptyFrameAfter()"><mat-icon svgIcon="plus" />{{ 'editor.insertEmptyAfter' | t }}</button>
+        <button mat-menu-item (click)="selectScene()"><mat-icon svgIcon="filmstrip" />{{ 'editor.selectScene' | t }} <span class="kbd-hint">{{ 'shortcuts.selectAll' | t }}</span></button>
+        <button mat-menu-item (click)="deleteFrames()"><mat-icon svgIcon="delete" />{{ multiSelection() ? ('editor.deleteFrames' | t: { count: selectedFrames().length }) : ('common.delete' | t) }}</button>
       </mat-menu>
     </div>
   </div>
 } @else {
   <div class="page">
     <div class="panel empty-state">
-      <p>This show doesn't exist (anymore).</p>
-      <a matButton="outlined" routerLink="/shows">Back to shows</a>
+      <p>{{ 'common.notFoundShow' | t }}</p>
+      <a matButton="outlined" routerLink="/shows">{{ 'common.backToShows' | t }}</a>
     </div>
   </div>
 }

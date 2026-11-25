@@ -8,14 +8,16 @@ import { PlayerService } from '../../core/services/player.service';
 import { RenderService } from '../../core/services/render.service';
 import { StorageService } from '../../core/services/storage.service';
 import { findPreset } from '../../core/interfaces/show.interface';
-import { formatDuration, readPreference, writePreference } from '../../core/utils/preferences';
+import { readPreference, writePreference } from '../../core/utils/preferences';
+import { I18nService } from '../../core/i18n/i18n.service';
+import { TranslatePipe } from '../../core/i18n/translate.pipe';
 
 const VIEW_MODES = ['facade', 'pixel'] as const;
 type ViewMode = (typeof VIEW_MODES)[number];
 
 @Component({
   selector: 'app-player',
-  imports: [RouterLink, MatButtonModule, MatIconModule, MatTooltipModule, PixelGridComponent],
+  imports: [RouterLink, MatButtonModule, MatIconModule, MatTooltipModule, PixelGridComponent, TranslatePipe],
   providers: [PlayerService],
   templateUrl: './player.component.html',
   styleUrl: './player.component.scss',
@@ -33,6 +35,7 @@ export class PlayerComponent {
   private render = inject(RenderService);
   private storage = inject(StorageService);
   private host = inject<ElementRef<HTMLElement>>(ElementRef);
+  private i18n = inject(I18nService);
 
   /** Route parameter `/play/:showId`. */
   readonly showId = input.required<string>();
@@ -57,8 +60,8 @@ export class PlayerComponent {
     return show ? findPreset(show.size)?.name ?? `${show.size.width} × ${show.size.height}` : '';
   });
 
-  readonly elapsed = computed(() => formatDuration(this.player.current()?.start ?? 0));
-  readonly total = computed(() => formatDuration(this.player.totalDuration()));
+  readonly elapsed = computed(() => this.i18n.duration(this.player.current()?.start ?? 0));
+  readonly total = computed(() => this.i18n.duration(this.player.totalDuration()));
 
   constructor() {
     effect(() => {
