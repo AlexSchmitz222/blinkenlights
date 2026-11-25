@@ -60,6 +60,13 @@ export class PlayerComponent {
     return show ? findPreset(show.size)?.name ?? `${show.size.width} × ${show.size.height}` : '';
   });
 
+  /** Fade at most half a frame, so even fast animations reach full brightness. */
+  readonly fade = computed(() => {
+    const duration = this.player.current()?.frame.duration ?? 0;
+    const max = this.viewMode() === 'facade' ? 180 : 120;
+    return duration === 0 ? max : Math.min(max, Math.round(duration / 2));
+  });
+
   readonly elapsed = computed(() => this.i18n.duration(this.player.current()?.start ?? 0));
   readonly total = computed(() => this.i18n.duration(this.player.totalDuration()));
 

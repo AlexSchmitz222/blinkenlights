@@ -1,7 +1,7 @@
 @if (show(); as show) {
   <div class="stage-wrap" (click)="player.toggle()" (dblclick)="toggleFullscreen()">
     @if (grid(); as grid) {
-      <app-pixel-grid class="stage" [grid]="grid" fit="contain" [variant]="viewMode()" [debug]="debug()" />
+      <app-pixel-grid class="stage" [grid]="grid" fit="contain" [variant]="viewMode()" [fade]="fade()" [debug]="debug()" />
     }
   </div>
 

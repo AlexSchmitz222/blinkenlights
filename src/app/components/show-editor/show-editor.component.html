@@ -61,7 +61,7 @@
         <section class="shapes">
           <div class="section-head">
             <h2 class="panel-title">{{ 'editor.shapes' | t }}</h2>
-            <a matIconButton routerLink="/shapes/new" [matTooltip]="'editor.newShape' | t" [attr.aria-label]="'editor.newShape' | t" class="small">
+            <a matIconButton routerLink="/shapes/new" [matTooltip]="'editor.newShape' | t" [attr.aria-label]="'editor.newShape' | t" class="icon-btn-sm">
               <mat-icon svgIcon="plus" />
             </a>
           </div>
@@ -85,6 +85,7 @@
             [grid]="grid"
             fit="contain"
             [interactive]="true"
+            [fade]="previewing() ? null : 0"
             [highlights]="highlights()"
             [ghost]="ghostGrid()"
             [debug]="debug()"
@@ -117,7 +118,7 @@
                 <mat-icon [svgIcon]="objectIcon(object)" class="inline-icon" />
                 {{ objectTypeLabel(object) | t }}
               </h2>
-              <button matIconButton class="small" (click)="selectedId.set(null)" [matTooltip]="'common.deselect' | t" [attr.aria-label]="'common.deselect' | t">
+              <button matIconButton class="icon-btn-sm" (click)="selectedId.set(null)" [matTooltip]="'common.deselect' | t" [attr.aria-label]="'common.deselect' | t">
                 <mat-icon svgIcon="close" />
               </button>
             </div>
@@ -167,7 +168,7 @@
             @if (multiSelection()) {
               <div class="section-head">
                 <h2 class="panel-title">{{ 'editor.framesSelected' | t: { count: selectedFrames().length } }}</h2>
-                <button matIconButton class="small" (click)="collapseSelection()" [matTooltip]="'editor.onlyCurrentFrame' | t" [attr.aria-label]="'editor.clearFrameSelection' | t">
+                <button matIconButton class="icon-btn-sm" (click)="collapseSelection()" [matTooltip]="'editor.onlyCurrentFrame' | t" [attr.aria-label]="'editor.clearFrameSelection' | t">
                   <mat-icon svgIcon="close" />
                 </button>
               </div>
@@ -243,7 +244,7 @@
           <header class="scene-head">
             <input class="scene-name" [value]="scene.name" (input)="renameScene(si, $any($event.target).value)" [attr.aria-label]="'editor.sceneName' | t" />
             <span class="muted scene-meta">{{ 'common.frames' | t: { count: scene.frames.length } }} · {{ sceneStats()[si] }}</span>
-            <button matIconButton class="small" [matMenuTriggerFor]="sceneMenu" [attr.aria-label]="'editor.sceneActions' | t">
+            <button matIconButton class="icon-btn-sm" [matMenuTriggerFor]="sceneMenu" [attr.aria-label]="'editor.sceneActions' | t">
               <mat-icon svgIcon="dots-vertical" />
             </button>
             <mat-menu #sceneMenu="matMenu">

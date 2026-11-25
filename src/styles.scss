@@ -60,6 +60,22 @@ html {
   @include mat.toolbar-overrides((
     container-background-color: var(--bl-surface),
   ));
+  // Neutral surfaces instead of M3's tinted ones (the orange palette tints them pink).
+  @include mat.dialog-overrides((
+    container-color: var(--bl-surface),
+  ));
+  @include mat.menu-overrides((
+    container-color: var(--bl-surface),
+  ));
+  @include mat.select-overrides((
+    panel-background-color: var(--bl-surface),
+  ));
+  @include mat.slide-toggle-overrides((
+    unselected-track-color: var(--bl-surface-2),
+    unselected-hover-track-color: var(--bl-surface-2),
+    unselected-focus-track-color: var(--bl-surface-2),
+    unselected-pressed-track-color: var(--bl-surface-2),
+  ));
 
   // --- App chrome (follows the theme) ---
   --bl-bg: light-dark(#f6f5f2, #111112);
@@ -99,6 +115,37 @@ html {
 html,
 body {
   height: 100%;
+}
+
+// Thin scrollbars that follow the theme (Firefox would otherwise show light ones in dark mode).
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--bl-border-strong) transparent;
+}
+
+// Compact icon buttons for dense panels (scene headers, panel titles).
+.icon-btn-sm {
+  @include mat.icon-button-overrides((
+    state-layer-size: 28px,
+    touch-target-size: 28px,
+  ));
+  padding: 4px !important;
+  // centre the icon (the default block layout aligns it to the text baseline, pushing it down)
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+
+  mat-icon {
+    display: block;
+    width: 18px;
+    height: 18px;
+
+    svg {
+      width: 100%;
+      height: 100%;
+    }
+  }
 }
 
 body {

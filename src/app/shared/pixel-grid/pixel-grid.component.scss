@@ -62,7 +62,7 @@
   aspect-ratio: 1;
   border-radius: 24%;
   background: var(--bl-light-off);
-  transition: background-color 120ms ease-out, box-shadow 120ms ease-out;
+  transition: background-color var(--fade, 120ms) ease-out, box-shadow var(--fade, 120ms) ease-out;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -115,7 +115,7 @@
     border-radius: 1px;
     background: #0d0d10;
     outline: calc(var(--cell) * 0.08) solid var(--bl-facade-frame);
-    transition: background-color 180ms ease-out, box-shadow 180ms ease-out;
+    transition: background-color var(--fade, 180ms) ease-out, box-shadow var(--fade, 180ms) ease-out;
 
     &.on {
       background: radial-gradient(ellipse at 50% 40%, #fff6dc 0%, #ffd27a 55%, #e8a94a 100%);

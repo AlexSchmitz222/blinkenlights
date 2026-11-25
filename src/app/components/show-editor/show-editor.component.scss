@@ -110,18 +110,6 @@
   vertical-align: -2px;
 }
 
-.small {
-  --mat-icon-button-state-layer-size: 32px;
-  width: 32px;
-  height: 32px;
-  padding: 4px;
-
-  mat-icon {
-    width: 18px;
-    height: 18px;
-  }
-}
-
 .small-text {
   font-size: 12px;
   margin: 0;
@@ -164,7 +152,15 @@
 .gen-list {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: stretch;
+
+  button {
+    justify-content: flex-start;
+    text-align: left;
+    height: auto;
+    min-height: 36px;
+    padding-block: 6px;
+  }
 }
 
 .shape-grid {
@@ -486,6 +482,7 @@
 
 .kbd-hint {
   margin-left: 12px;
+  white-space: nowrap;
   font-size: 11px;
   color: var(--bl-text-muted);
 }

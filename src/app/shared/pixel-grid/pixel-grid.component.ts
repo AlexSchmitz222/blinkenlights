@@ -35,6 +35,7 @@ export interface PixelPointerEvent extends Position {
     '[class.facade]': "variant() === 'facade'",
     '[class.interactive]': 'interactive()',
     '[class.bare]': 'bare()',
+    '[style.--fade]': 'fade() === null ? null : fade() + "ms"',
   },
 })
 export class PixelGridComponent {
@@ -50,6 +51,11 @@ export class PixelGridComponent {
   readonly highlights = input<GridHighlight[]>([]);
   /** A second grid shown faintly underneath (onion skin). */
   readonly ghost = input<Grid | null>(null);
+  /**
+   * How long a light takes to switch on/off, in ms. Default: a soft 120 ms (180 ms for the facade).
+   * Editors pass 0 for instant feedback; the player passes a value that fits the frame duration.
+   */
+  readonly fade = input<number | null>(null);
 
   readonly pixelPointer = output<PixelPointerEvent>();
   readonly pixelPointerEnd = output<void>();
