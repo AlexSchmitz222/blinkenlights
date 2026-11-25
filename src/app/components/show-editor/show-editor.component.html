@@ -151,7 +151,11 @@
               <button matIconButton (click)="reorderSelected(1)" matTooltip="Bring forward" aria-label="Bring forward"><mat-icon svgIcon="arrow-up" /></button>
               <button matIconButton (click)="reorderSelected(-1)" matTooltip="Send backward" aria-label="Send backward"><mat-icon svgIcon="arrow-down" /></button>
               <button matIconButton (click)="duplicateSelected()" matTooltip="Duplicate" aria-label="Duplicate object"><mat-icon svgIcon="content-copy" /></button>
-              <button matIconButton (click)="applyToRestOfScene()" matTooltip="Apply to the rest of this scene" aria-label="Apply to rest of scene"><mat-icon svgIcon="chevron-right" /></button>
+              @if (multiSelection()) {
+                <button matIconButton (click)="applyObjectToSelection()" [matTooltip]="'Apply to the ' + selectedFrames().length + ' selected frames'" aria-label="Apply to selected frames"><mat-icon svgIcon="filmstrip" /></button>
+              } @else {
+                <button matIconButton (click)="applyToRestOfScene()" matTooltip="Apply to the rest of this scene" aria-label="Apply to rest of scene"><mat-icon svgIcon="chevron-right" /></button>
+              }
               <button matIconButton (click)="deleteSelected()" matTooltip="Delete (Del)" aria-label="Delete object"><mat-icon svgIcon="delete" /></button>
             </div>
             <p class="muted small-text">Drag on the stage or use the arrow keys (Shift = 5 px).</p>
@@ -160,15 +164,42 @@
 
         @if (currentFrame(); as frame) {
           <section>
-            <h2 class="panel-title">Frame {{ frameIndex() + 1 }} of {{ currentScene()?.frames?.length }}</h2>
+            @if (multiSelection()) {
+              <div class="section-head">
+                <h2 class="panel-title">{{ selectedFrames().length }} frames selected</h2>
+                <button matIconButton class="small" (click)="collapseSelection()" matTooltip="Only the current frame (Esc)" aria-label="Clear frame selection">
+                  <mat-icon svgIcon="close" />
+                </button>
+              </div>
+              <p class="muted small-text">Changes below apply to all of them · {{ selectionDurationTotal() }} in total</p>
+            } @else {
+              <h2 class="panel-title">Frame {{ frameIndex() + 1 }} of {{ currentScene()?.frames?.length }}</h2>
+            }
             <label class="row">
               <span>Duration (ms)</span>
-              <input class="input num wide" type="number" min="0" step="10" [value]="frame.duration" [disabled]="frame.duration === 0" (input)="setDuration(+$any($event.target).value)" />
+              <input
+                class="input num wide"
+                type="number"
+                min="0"
+                step="10"
+                [value]="selectionDuration() ?? ''"
+                [placeholder]="selectionDuration() === null ? 'mixed' : ''"
+                [disabled]="selectionDuration() === 0"
+                (input)="setDuration(+$any($event.target).value)" />
             </label>
-            <mat-slide-toggle [checked]="frame.duration === 0" (change)="setHold($event.checked)">Hold until continued</mat-slide-toggle>
-            <button matButton class="link-button" (click)="applyDurationToScene()">Use this duration for the whole scene</button>
+            <mat-slide-toggle [checked]="selectionDuration() === 0" (change)="setHold($event.checked)">Hold until continued</mat-slide-toggle>
+            @if (!multiSelection()) {
+              <button matButton class="link-button" (click)="applyDurationToScene()">Use this duration for the whole scene</button>
+            }
+            <div class="actions">
+              <button matButton (click)="duplicateFrames()" matTooltip="Ctrl + D"><mat-icon svgIcon="content-copy" />Duplicate</button>
+              <button matButton (click)="deleteFrames()" matTooltip="Del (with no object selected)"><mat-icon svgIcon="delete" />Delete</button>
+            </div>
+            @if (!multiSelection()) {
+              <p class="muted small-text tip">Tip: Ctrl + click or Shift + click frames in the timeline to edit several at once. Ctrl + A selects the whole scene.</p>
+            }
 
-            <h3 class="panel-title sub">Objects</h3>
+            <h3 class="panel-title sub">Objects in this frame</h3>
             <ul class="layers">
               @for (object of frame.objects.slice().reverse(); track object.id) {
                 <li>
@@ -237,11 +268,12 @@
                 tabindex="0"
                 role="button"
                 [attr.aria-label]="'Frame ' + (fi + 1)"
-                [class.selected]="si === sceneIndex() && fi === frameIndex() && !playhead()"
+                [class.current]="si === sceneIndex() && fi === frameIndex() && !playhead()"
+                [class.selected]="selectedFrameIdSet().has(frame.id) && !playhead()"
                 [class.playing]="playhead()?.scene === si && playhead()?.frame === fi"
                 [style.width.px]="thumbWidth()"
-                (click)="selectFrame(si, fi)"
-                (keydown.enter)="selectFrame(si, fi)"
+                (click)="onFrameClick($event, si, fi)"
+                (keydown.enter)="onFrameClick($any($event), si, fi)"
                 (contextmenu)="openFrameMenu($event, frameMenuTrigger, si, fi)">
                 <app-grid-thumb [grid]="thumbs()[si][fi]" [scale]="3" />
                 <span class="frame-meta">
@@ -263,9 +295,10 @@
       <!-- context menu for frames (opened by right click) -->
       <span class="menu-anchor" #frameMenuTrigger="matMenuTrigger" [matMenuTriggerFor]="frameMenu" [style.left.px]="menuPosition().x" [style.top.px]="menuPosition().y"></span>
       <mat-menu #frameMenu="matMenu">
-        <button mat-menu-item (click)="duplicateFrame()"><mat-icon svgIcon="content-copy" />Duplicate <span class="kbd-hint">Ctrl+D</span></button>
+        <button mat-menu-item (click)="duplicateFrames()"><mat-icon svgIcon="content-copy" />{{ multiSelection() ? 'Duplicate ' + selectedFrames().length + ' frames' : 'Duplicate' }} <span class="kbd-hint">Ctrl+D</span></button>
         <button mat-menu-item (click)="insertEmptyFrameAfter()"><mat-icon svgIcon="plus" />Insert empty frame after</button>
-        <button mat-menu-item (click)="deleteFrame()"><mat-icon svgIcon="delete" />Delete</button>
+        <button mat-menu-item (click)="selectScene()"><mat-icon svgIcon="filmstrip" />Select whole scene <span class="kbd-hint">Ctrl+A</span></button>
+        <button mat-menu-item (click)="deleteFrames()"><mat-icon svgIcon="delete" />{{ multiSelection() ? 'Delete ' + selectedFrames().length + ' frames' : 'Delete' }}</button>
       </mat-menu>
     </div>
   </div>

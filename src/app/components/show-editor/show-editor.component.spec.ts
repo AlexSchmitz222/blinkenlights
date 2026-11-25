@@ -89,13 +89,13 @@ describe('ShowEditorComponent', () => {
   });
 
   it('duplicates and deletes frames, keeping at least one per scene', () => {
-    editor.duplicateFrame();
+    editor.duplicateFrames();
     expect(editor.show()!.scenes[0].frames.length).toBe(3);
     expect(editor.frameIndex()).toBe(1);
 
     editor.selectFrame(1, 0);
     editor.addText();
-    editor.deleteFrame();
+    editor.deleteFrames();
     expect(editor.show()!.scenes[1].frames.length).toBe(1);
     expect(editor.show()!.scenes[1].frames[0].objects).toEqual([]);
   });
@@ -134,5 +134,99 @@ describe('ShowEditorComponent', () => {
     editor.setText('abc');
     editor.undo();
     expect((editor.selectedObject() as TextObject | null)?.text ?? (frameObjects()[0] as TextObject).text).toBe('Hi!');
+  });
+
+  describe('multi-select', () => {
+    const durations = () => editor.show()!.scenes.flatMap(s => s.frames.map(f => f.duration));
+    const selectedIds = () => editor.selectedFrames().map(f => f.frame.id);
+
+    it('toggles frames with Ctrl/⌘ + click and edits their duration together', () => {
+      editor.selectFrame(0, 0);
+      editor.onFrameClick(new MouseEvent('click', { ctrlKey: true }), 1, 0);
+      expect(selectedIds()).toEqual(['f1', 'f3']);
+      expect(editor.multiSelection()).toBe(true);
+      // the stage stays on the current frame
+      expect([editor.sceneIndex(), editor.frameIndex()]).toEqual([0, 0]);
+
+      editor.setDuration(250);
+      expect(durations()).toEqual([250, 100, 250]);
+      expect(editor.selectionDuration()).toBe(250);
+
+      editor.undo();
+      expect(durations()).toEqual([100, 100, 100]);
+    });
+
+    it('reports mixed durations as null', () => {
+      editor.setDuration(300);
+      editor.onFrameClick(new MouseEvent('click', { shiftKey: true }), 0, 1);
+      expect(editor.selectionDuration()).toBeNull();
+    });
+
+    it('selects a range with Shift + click, across scenes', () => {
+      editor.selectFrame(0, 1);
+      editor.onFrameClick(new MouseEvent('click', { shiftKey: true }), 1, 0);
+      expect(selectedIds()).toEqual(['f2', 'f3']);
+      editor.onFrameClick(new MouseEvent('click', { shiftKey: true }), 0, 0);
+      expect(selectedIds()).toEqual(['f1', 'f2']);
+    });
+
+    it('removes a frame from the selection with a second Ctrl + click', () => {
+      editor.selectScene(0);
+      expect(selectedIds()).toEqual(['f1', 'f2']);
+      editor.onFrameClick(new MouseEvent('click', { ctrlKey: true }), 0, 0);
+      expect(selectedIds()).toEqual(['f2']);
+      expect(editor.frameIndex()).toBe(1);
+    });
+
+    it('plain click collapses the selection', () => {
+      editor.selectScene(0);
+      editor.onFrameClick(new MouseEvent('click'), 0, 0);
+      expect(selectedIds()).toEqual(['f1']);
+    });
+
+    it('duplicates the selection after its last frame and selects the copies', () => {
+      editor.selectScene(0);
+      editor.duplicateFrames();
+      const frames = editor.show()!.scenes[0].frames;
+      expect(frames.length).toBe(4);
+      expect(frames.slice(0, 2).map(f => f.id)).toEqual(['f1', 'f2']);
+      expect(selectedIds()).toEqual(frames.slice(2).map(f => f.id));
+    });
+
+    it('deletes the selection but never empties a scene', () => {
+      editor.selectFrame(0, 1);
+      editor.onFrameClick(new MouseEvent('click', { shiftKey: true }), 1, 0);
+      editor.deleteFrames();
+      const scenes = editor.show()!.scenes;
+      expect(scenes[0].frames.map(f => f.id)).toEqual(['f1']);
+      expect(scenes[1].frames.length).toBe(1);
+      expect(scenes[1].frames[0].id).not.toBe('f3');
+      expect(selectedIds().length).toBe(1);
+    });
+
+    it('keeps the object selected while extending the selection, and applies it to all selected frames', () => {
+      editor.selectFrame(0, 0);
+      editor.addText();
+      const objectId = editor.selectedId();
+      editor.onFrameClick(new MouseEvent('click', { ctrlKey: true }), 1, 0);
+      expect(editor.selectedId()).toBe(objectId);
+
+      editor.applyObjectToSelection();
+      expect(editor.show()!.scenes[1].frames[0].objects.map(o => o.id)).toEqual([objectId]);
+      expect(editor.show()!.scenes[0].frames[1].objects).toEqual([]);
+    });
+
+    it('uses the current frame as anchor for the first Shift + click', () => {
+      editor.selectFrame(1, 0);
+      editor.onFrameClick(new MouseEvent('click', { shiftKey: true }), 0, 1);
+      expect(selectedIds()).toEqual(['f2', 'f3']);
+    });
+
+    it('drops ids of frames that no longer exist after undo', () => {
+      editor.duplicateFrames();
+      editor.undo();
+      expect(selectedIds().every(id => ['f1', 'f2', 'f3'].includes(id))).toBe(true);
+      expect(selectedIds().length).toBeGreaterThan(0);
+    });
   });
 });

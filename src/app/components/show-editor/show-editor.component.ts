@@ -74,6 +74,9 @@ export class ShowEditorComponent implements HasUnsavedChanges {
   readonly sceneIndex = signal(0);
   readonly frameIndex = signal(0);
   readonly selectedId = signal<string | null>(null);
+  /** Frames selected in the timeline (by id). The current frame is always part of the selection. */
+  private readonly selectedFrameIds = signal<ReadonlySet<string>>(new Set());
+  private selectionAnchor: string | null = null;
   readonly onionSkin = signal(false);
   readonly debug = signal(false);
   readonly menuPosition = signal({ x: 0, y: 0 });
@@ -103,6 +106,30 @@ export class ShowEditorComponent implements HasUnsavedChanges {
   readonly currentFrame = computed(() => this.currentScene()?.frames[this.frameIndex()] ?? null);
   readonly selectedObject = computed(() => this.currentFrame()?.objects.find(o => o.id === this.selectedId()) ?? null);
   readonly previewing = computed(() => this.player.playing());
+
+  /**
+   * The selected frames in timeline order. Ids that no longer exist (after undo, delete, …) are
+   * ignored, and the current frame is always included.
+   */
+  readonly selectedFrames = computed(() => {
+    const ids = this.selectedFrameIds();
+    const current = this.currentFrame();
+    const result: { sceneIndex: number; frameIndex: number; frame: Frame }[] = [];
+    this.show()?.scenes.forEach((scene, sceneIndex) =>
+      scene.frames.forEach((frame, frameIndex) => {
+        if (ids.has(frame.id) || frame === current) result.push({ sceneIndex, frameIndex, frame });
+      }),
+    );
+    return result;
+  });
+  readonly selectedFrameIdSet = computed(() => new Set(this.selectedFrames().map(f => f.frame.id)));
+  readonly multiSelection = computed(() => this.selectedFrames().length > 1);
+  /** Duration shared by all selected frames, or null if they differ. */
+  readonly selectionDuration = computed(() => {
+    const durations = new Set(this.selectedFrames().map(f => f.frame.duration));
+    return durations.size === 1 ? [...durations][0] : null;
+  });
+  readonly selectionDurationTotal = computed(() => formatDuration(this.selectedFrames().reduce((t, f) => t + f.frame.duration, 0)));
   readonly presetId = computed(() => {
     const show = this.show();
     return show ? findPreset(show.size)?.id ?? 'custom' : 'custom';
@@ -198,7 +225,7 @@ export class ShowEditorComponent implements HasUnsavedChanges {
       this.sceneIndex();
       this.frameIndex();
       this.playhead();
-      const el = this.timelineEl()?.nativeElement.querySelector('.frame.playing, .frame.selected');
+      const el = this.timelineEl()?.nativeElement.querySelector('.frame.playing, .frame.current');
       el?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
     });
   }
@@ -214,6 +241,8 @@ export class ShowEditorComponent implements HasUnsavedChanges {
     this.sceneIndex.set(0);
     this.frameIndex.set(0);
     this.selectedId.set(null);
+    this.selectedFrameIds.set(new Set());
+    this.selectionAnchor = null;
     this.past.set([]);
     this.future.set([]);
     this.revision.set(0);
@@ -282,12 +311,96 @@ export class ShowEditorComponent implements HasUnsavedChanges {
 
   // --- navigation ------------------------------------------------------------------------------
 
-  selectFrame(sceneIndex: number, frameIndex: number) {
+  /**
+   * Selects frames in the timeline.
+   * - 'single' (plain click): only this frame is selected and becomes the current one (shown on the stage)
+   * - 'toggle' (Ctrl/⌘ + click): adds or removes it from the selection
+   * - 'range' (Shift + click): selects everything from the last clicked frame to this one
+   *
+   * Toggle and range only change the selection; the stage stays on the current frame, so a selected
+   * object stays selected and can be applied to all selected frames.
+   */
+  selectFrame(sceneIndex: number, frameIndex: number, mode: 'single' | 'toggle' | 'range' = 'single') {
+    const frame = this.show()?.scenes[sceneIndex]?.frames[frameIndex];
+    if (!frame) return;
+    const currentFrame = this.currentFrame();
+    const selection = new Set(this.selectedFrames().map(f => f.frame.id));
+
+    if (mode === 'toggle') {
+      this.selectionAnchor = frame.id;
+      if (!selection.has(frame.id)) {
+        selection.add(frame.id);
+        this.selectedFrameIds.set(selection);
+        return;
+      }
+      if (selection.size === 1) return; // can't deselect the only frame
+      selection.delete(frame.id);
+      this.selectedFrameIds.set(selection);
+      if (frame === currentFrame) {
+        // the current frame left the selection: move to the nearest remaining one
+        const remaining = this.selectedFrames().filter(f => f.frame !== currentFrame);
+        const clicked = this.flatIndex(sceneIndex, frameIndex);
+        const next = remaining.find(f => this.flatIndex(f.sceneIndex, f.frameIndex) > clicked) ?? remaining.at(-1)!;
+        this.setCurrent(next.sceneIndex, next.frameIndex);
+      }
+      return;
+    }
+
+    if (mode === 'range') {
+      const anchor = this.findFrame(this.selectionAnchor ?? currentFrame?.id ?? frame.id);
+      const from = anchor ? this.flatIndex(anchor.sceneIndex, anchor.frameIndex) : this.flatIndex(sceneIndex, frameIndex);
+      const to = this.flatIndex(sceneIndex, frameIndex);
+      const ids = new Set<string>();
+      for (let i = Math.min(from, to); i <= Math.max(from, to); i++) {
+        const f = this.frameAt(i);
+        if (f) ids.add(f.id);
+      }
+      this.selectionAnchor ??= currentFrame?.id ?? frame.id;
+      this.selectedFrameIds.set(ids);
+      if (!currentFrame || !ids.has(currentFrame.id)) this.setCurrent(sceneIndex, frameIndex);
+      return;
+    }
+
+    this.selectedFrameIds.set(new Set([frame.id]));
+    this.selectionAnchor = frame.id;
+    this.setCurrent(sceneIndex, frameIndex);
+  }
+
+  onFrameClick(event: MouseEvent, sceneIndex: number, frameIndex: number) {
+    const mode = event.shiftKey ? 'range' : event.ctrlKey || event.metaKey ? 'toggle' : 'single';
+    this.selectFrame(sceneIndex, frameIndex, mode);
+  }
+
+  /** Selects all frames of the current scene. */
+  selectScene(sceneIndex = this.sceneIndex()) {
+    const scene = this.show()?.scenes[sceneIndex];
+    if (!scene?.frames.length) return;
+    this.selectedFrameIds.set(new Set(scene.frames.map(f => f.id)));
+    this.selectionAnchor = scene.frames[0].id;
+    if (this.sceneIndex() !== sceneIndex) this.setCurrent(sceneIndex, 0);
+  }
+
+  /** Reduces a multi-selection to the current frame. */
+  collapseSelection() {
+    const frame = this.currentFrame();
+    if (frame) this.selectedFrameIds.set(new Set([frame.id]));
+  }
+
+  private setCurrent(sceneIndex: number, frameIndex: number) {
     this.sceneIndex.set(sceneIndex);
     this.frameIndex.set(frameIndex);
     // Keep the same object selected if it also exists in the new frame.
     if (!this.currentFrame()?.objects.some(o => o.id === this.selectedId())) this.selectedId.set(null);
     this.lastCoalesceKey = null;
+  }
+
+  private findFrame(id: string): { sceneIndex: number; frameIndex: number } | null {
+    const scenes = this.show()?.scenes ?? [];
+    for (let s = 0; s < scenes.length; s++) {
+      const f = scenes[s].frames.findIndex(frame => frame.id === id);
+      if (f > -1) return { sceneIndex: s, frameIndex: f };
+    }
+    return null;
   }
 
   stepFrame(delta: number) {
@@ -476,16 +589,39 @@ export class ShowEditorComponent implements HasUnsavedChanges {
 
   // --- frames ----------------------------------------------------------------------------------
 
+  /** Applies `fn` to every selected frame. */
+  private editSelectedFrames(fn: (frame: Frame) => Frame, coalesceKey?: string) {
+    const ids = this.selectedFrameIdSet();
+    if (!ids.size) return;
+    this.edit(show => ({
+      ...show,
+      scenes: show.scenes.map(scene =>
+        scene.frames.some(f => ids.has(f.id)) ? { ...scene, frames: scene.frames.map(f => (ids.has(f.id) ? fn(f) : f)) } : scene,
+      ),
+    }), coalesceKey);
+  }
+
+  /** Sets the duration of all selected frames. */
   setDuration(value: number) {
     if (!Number.isFinite(value)) return;
-    const frame = this.currentFrame();
-    if (!frame) return;
     const duration = Math.max(0, Math.round(value));
-    this.edit(show => edit.updateFrame(show, this.sceneIndex(), this.frameIndex(), f => ({ ...f, duration })), `duration:${frame.id}`);
+    this.editSelectedFrames(f => ({ ...f, duration }), `duration:${[...this.selectedFrameIdSet()].join(',')}`);
   }
 
   setHold(hold: boolean) {
     this.setDuration(hold ? 0 : DEFAULT_FRAME_DURATION);
+  }
+
+  /** Copies the selected object into every selected frame (replacing it where it already exists). */
+  applyObjectToSelection() {
+    const object = this.selectedObject();
+    if (!object) return;
+    this.editSelectedFrames(frame =>
+      frame.objects.some(o => o.id === object.id)
+        ? { ...frame, objects: frame.objects.map(o => (o.id === object.id ? structuredClone(object) : o)) }
+        : { ...frame, objects: [...frame.objects, structuredClone(object)] },
+    );
+    this.snackBar.open(`Applied to ${this.selectedFrames().length} frames`, undefined, { duration: 2000 });
   }
 
   /** Applies the current frame's duration to every frame in the scene. */
@@ -514,28 +650,52 @@ export class ShowEditorComponent implements HasUnsavedChanges {
     this.selectFrame(si, fi + 1);
   }
 
-  duplicateFrame(sceneIndex = this.sceneIndex(), frameIndex = this.frameIndex()) {
-    const frame = this.show()?.scenes[sceneIndex]?.frames[frameIndex];
-    if (!frame) return;
-    this.edit(show => edit.insertFrames(show, sceneIndex, frameIndex + 1, [edit.copyFrame(frame)]));
-    this.selectFrame(sceneIndex, frameIndex + 1);
+  /**
+   * Duplicates the selected frames. The copies are inserted (in order) right after the last
+   * selected frame and become the new selection.
+   */
+  duplicateFrames() {
+    const selected = this.selectedFrames();
+    const last = selected.at(-1);
+    if (!last) return;
+    const copies = selected.map(s => edit.copyFrame(s.frame));
+    this.edit(show => edit.insertFrames(show, last.sceneIndex, last.frameIndex + 1, copies));
+    this.selectedFrameIds.set(new Set(copies.map(c => c.id)));
+    this.selectionAnchor = copies[0].id;
+    this.setCurrent(last.sceneIndex, last.frameIndex + copies.length);
   }
 
-  deleteFrame(sceneIndex = this.sceneIndex(), frameIndex = this.frameIndex()) {
-    const scene = this.show()?.scenes[sceneIndex];
-    if (!scene?.frames[frameIndex]) return;
-    if (scene.frames.length === 1) {
-      // Keep at least one frame per scene: clear it instead.
-      this.edit(show => edit.updateFrame(show, sceneIndex, frameIndex, f => ({ ...f, objects: [] })));
-    } else {
-      this.edit(show => edit.removeFrame(show, sceneIndex, frameIndex));
+  /** Deletes the selected frames. A scene never ends up empty: its last frame is cleared instead. */
+  deleteFrames() {
+    const selected = this.selectedFrames();
+    if (!selected.length) return;
+    const ids = new Set(selected.map(s => s.frame.id));
+    const first = selected[0];
+    this.edit(show => ({
+      ...show,
+      scenes: show.scenes.map(scene => {
+        if (!scene.frames.some(f => ids.has(f.id))) return scene;
+        const kept = scene.frames.filter(f => !ids.has(f.id));
+        return {
+          ...scene,
+          frames: kept.length ? kept : [{ ...scene.frames[0], id: createId('frame'), objects: [] }],
+        };
+      }),
+    }));
+    const scene = this.show()!.scenes[first.sceneIndex];
+    const frameIndex = Math.min(first.frameIndex, scene.frames.length - 1);
+    this.selectFrame(first.sceneIndex, frameIndex);
+    if (selected.length > 1) {
+      this.snackBar.open(`Deleted ${selected.length} frames`, 'Undo', { duration: 4000 }).onAction().subscribe(() => this.undo());
     }
-    this.selectFrame(sceneIndex, Math.min(frameIndex, Math.max(0, scene.frames.length - 2)));
   }
 
   openFrameMenu(event: MouseEvent, trigger: MatMenuTrigger, sceneIndex: number, frameIndex: number) {
     event.preventDefault();
-    this.selectFrame(sceneIndex, frameIndex);
+    // Right-clicking inside the selection keeps it; outside, it selects just that frame.
+    const frame = this.show()?.scenes[sceneIndex]?.frames[frameIndex];
+    if (frame && this.selectedFrameIdSet().has(frame.id)) this.setCurrent(sceneIndex, frameIndex);
+    else this.selectFrame(sceneIndex, frameIndex);
     this.menuPosition.set({ x: event.clientX, y: event.clientY });
     // let the anchor move before the menu measures its position
     setTimeout(() => trigger.openMenu());
@@ -718,16 +878,17 @@ export class ShowEditorComponent implements HasUnsavedChanges {
     if (typing) return;
     if (mod && key === 'z' && !event.shiftKey) return this.handled(event, () => this.undo());
     if ((mod && key === 'z' && event.shiftKey) || (mod && key === 'y')) return this.handled(event, () => this.redo());
-    if (mod && key === 'd') return this.handled(event, () => this.duplicateFrame());
+    if (mod && key === 'd') return this.handled(event, () => this.duplicateFrames());
+    if (mod && key === 'a') return this.handled(event, () => this.selectScene());
     if (mod || event.altKey) return;
 
     const step = event.shiftKey ? 5 : 1;
     const selected = !!this.selectedObject();
     switch (event.key) {
       case ' ': return this.handled(event, () => this.togglePreview());
-      case 'Escape': return this.handled(event, () => this.selectedId.set(null));
+      case 'Escape': return this.handled(event, () => (selected ? this.selectedId.set(null) : this.collapseSelection()));
       case 'Delete':
-      case 'Backspace': return selected ? this.handled(event, () => this.deleteSelected()) : undefined;
+      case 'Backspace': return this.handled(event, () => (selected ? this.deleteSelected() : this.deleteFrames()));
       case 'ArrowLeft': return this.handled(event, () => (selected ? this.nudge(-step, 0) : this.stepFrame(-1)));
       case 'ArrowRight': return this.handled(event, () => (selected ? this.nudge(step, 0) : this.stepFrame(1)));
       case 'ArrowUp': return selected ? this.handled(event, () => this.nudge(0, -step)) : undefined;

@@ -277,6 +277,10 @@
   flex-wrap: wrap;
 }
 
+.tip {
+  margin-top: 2px;
+}
+
 .link-button {
   align-self: flex-start;
   font-size: 12px;
@@ -397,6 +401,7 @@
 
 .frame {
   flex-shrink: 0;
+  user-select: none; // Shift + click selects frames, not text
   display: flex;
   flex-direction: column;
   gap: 3px;
@@ -411,8 +416,19 @@
     border-color: var(--bl-border-strong);
   }
 
-  &:focus-visible,
+  &:focus-visible {
+    outline: 2px solid var(--bl-accent);
+    outline-offset: 1px;
+  }
+
+  // part of a (multi) selection
   &.selected {
+    border-color: var(--bl-accent);
+    background: var(--bl-accent-soft);
+  }
+
+  // the frame shown on the stage
+  &.current {
     border-color: var(--bl-accent);
     box-shadow: 0 0 0 1px var(--bl-accent);
   }
