@@ -7,10 +7,11 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ThemeMode, ThemeService } from './core/theme/theme.service';
+import { LogoComponent } from './shared/logo/logo.component';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, MatButtonModule, MatIconModule, MatMenuModule, MatTooltipModule],
+  imports: [LogoComponent, RouterOutlet, RouterLink, RouterLinkActive, MatButtonModule, MatIconModule, MatMenuModule, MatTooltipModule],
   templateUrl: './app.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './app.component.scss'

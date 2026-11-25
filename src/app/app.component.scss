@@ -27,28 +27,6 @@
   letter-spacing: -0.02em;
 }
 
-// tiny 3×2 light logo
-.logo {
-  display: grid;
-  grid-template-columns: repeat(3, 6px);
-  gap: 2px;
-  padding: 4px;
-  background: var(--bl-stage-bg);
-  border-radius: 4px;
-
-  i {
-    width: 6px;
-    height: 6px;
-    border-radius: 1.5px;
-    background: var(--bl-light-off);
-  }
-
-  i.on {
-    background: var(--bl-light-on);
-    box-shadow: 0 0 4px var(--bl-light-glow);
-  }
-}
-
 nav {
   display: flex;
   gap: 4px;
