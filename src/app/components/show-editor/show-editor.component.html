@@ -17,9 +17,9 @@
         <mat-icon svgIcon="redo" />
       </button>
       <span class="divider"></span>
-      <button matButton (click)="togglePreview()" [matTooltip]="'shortcuts.space' | t">
+      <button matButton (click)="togglePreview()" [matTooltip]="'shortcuts.space' | t" [attr.aria-label]="(previewing() ? 'common.pause' : 'editor.preview') | t">
         <mat-icon [svgIcon]="previewing() ? 'pause' : 'play'" />
-        {{ (previewing() ? 'common.pause' : 'editor.preview') | t }}
+        <span class="label">{{ (previewing() ? 'common.pause' : 'editor.preview') | t }}</span>
       </button>
       <button matIconButton [matMenuTriggerFor]="showMenu" [attr.aria-label]="'common.more' | t">
         <mat-icon svgIcon="dots-vertical" />
@@ -30,9 +30,9 @@
         <button mat-menu-item (click)="exportMovie('blm')"><mat-icon svgIcon="download" />{{ 'editor.exportBlm' | t }}</button>
         <button mat-menu-item (click)="exportMovie('bml')"><mat-icon svgIcon="download" />{{ 'editor.exportBml' | t }}</button>
       </mat-menu>
-      <button matButton="filled" (click)="save()" [disabled]="!dirty()" [matTooltip]="'shortcuts.save' | t">
+      <button matButton="filled" (click)="save()" [disabled]="!dirty()" [matTooltip]="'shortcuts.save' | t" [attr.aria-label]="'common.save' | t">
         <mat-icon svgIcon="content-save" />
-        {{ 'common.save' | t }}
+        <span class="label">{{ 'common.save' | t }}</span>
       </button>
     </header>
 

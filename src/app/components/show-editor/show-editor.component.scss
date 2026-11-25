@@ -24,7 +24,7 @@
 }
 
 .title-input {
-  min-width: 80px;
+  min-width: 0;
   max-width: 320px;
   flex: 0 1 320px;
   padding: 4px 8px;
@@ -512,6 +512,26 @@
 @media (max-width: 860px) {
   .editor {
     height: auto;
+  }
+
+  // icon-only toolbar buttons so the bar fits on a phone
+  .editor-bar {
+    gap: 2px;
+    padding-right: 8px;
+
+    .label,
+    .divider {
+      display: none;
+    }
+
+    .mat-mdc-button-base:not(.mat-mdc-icon-button) {
+      min-width: 0;
+      padding: 0 10px;
+
+      mat-icon {
+        margin: 0;
+      }
+    }
   }
 
   .workspace {

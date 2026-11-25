@@ -68,8 +68,31 @@ Requires Node.js 20.19+, 22.12+ or 24+.
 npm install
 npm start          # dev server on http://localhost:4200
 npm test           # unit tests (Vitest + jsdom)
+npm run test:ui    # UI tests in the real browser (Firefox), see below
 npm run build      # production build into dist/blinkenlights
 ```
+
+### UI tests
+
+`e2e/app.e2e.mjs` clicks through the app in the installed **Firefox** using `puppeteer-core` over WebDriver BiDi. No browser is downloaded. The tests run on Node's built-in test runner. They check the most important flows and fail if the browser console shows an error:
+- start page and logo
+- show list and the new-show dialog
+- drawing in the shape editor
+- in the show editor: selecting objects, multi-frame selection, the context menu, alignment of the small buttons
+- player
+- German and dark mode
+- no horizontal scrolling at phone width
+
+Each test also saves a screenshot to `e2e/screenshots/` for a quick visual check.
+
+```bash
+npm run test:ui                                  # starts `ng serve` itself, or reuses one on port 4321
+E2E_HEADFUL=1 npm run test:ui                    # watch the browser
+FIREFOX_BIN=/path/to/firefox npm run test:ui     # if Firefox isn't found automatically
+E2E_BASE_URL=http://localhost:4200 npm run test:ui
+```
+
+The Firefox test profile lives in `e2e/.profile`. It sits inside the project because snap-packaged Firefox can't use `/tmp`. Both the profile and the screenshots are git-ignored.
 
 Project layout:
 
@@ -85,6 +108,7 @@ src/app/
   shapes/          default shapes and the pixel font
   core/i18n/       translations (en, de), the t pipe and the title strategy
   shows/           demo shows
+e2e/               UI tests (Firefox)
 public/
   icons/           Material Design Icons as SVG (see below)
   fonts/           JetBrains Mono
