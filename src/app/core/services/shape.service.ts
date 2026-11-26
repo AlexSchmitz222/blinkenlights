@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Shape } from '../interfaces/shape.interface';
-import { Grid, Size } from '../interfaces/grid.interface';
+import { Grid, Position, Size } from '../interfaces/grid.interface';
 import { Pixel } from '../interfaces/pixel.interface';
 
 /** Pure helpers to convert and transform shapes. None of these mutate their input. */
@@ -75,6 +75,77 @@ export class ShapeService {
 
   isPixelOn(shape: Shape, x: number, y: number): boolean {
     return shape.pattern.some(p => p.position.x === x && p.position.y === y && p.active === true);
+  }
+
+  /** Returns a copy with all given pixels set on or off. Points outside the shape are ignored. */
+  setPixels(shape: Shape, points: Position[], on: boolean): Shape {
+    const inside = points.filter(p => p.x >= 0 && p.y >= 0 && p.x < shape.size.width && p.y < shape.size.height);
+    const keys = new Set(inside.map(p => `${p.x},${p.y}`));
+    const pattern = shape.pattern.filter(p => !keys.has(`${p.position.x},${p.position.y}`));
+    if (on) {
+      for (const key of keys) {
+        const [x, y] = key.split(',').map(Number);
+        pattern.push({ position: { x, y }, active: true });
+      }
+    }
+    return { ...shape, pattern };
+  }
+
+  /** The pixels of a straight line from (x1, y1) to (x2, y2), both ends included (Bresenham). */
+  linePoints(x1: number, y1: number, x2: number, y2: number): Position[] {
+    const points: Position[] = [];
+    const dx = Math.abs(x2 - x1);
+    const dy = Math.abs(y2 - y1);
+    const sx = x1 < x2 ? 1 : -1;
+    const sy = y1 < y2 ? 1 : -1;
+    let err = dx - dy;
+    let x = x1;
+    let y = y1;
+    while (true) {
+      points.push({ x, y });
+      if (x === x2 && y === y2) return points;
+      const e2 = 2 * err;
+      if (e2 > -dy) { err -= dy; x += sx; }
+      if (e2 < dx) { err += dx; y += sy; }
+    }
+  }
+
+  /** The pixels of the rectangle spanned by two corners (in any order): outline or filled. */
+  rectPoints(x1: number, y1: number, x2: number, y2: number, filled: boolean): Position[] {
+    const left = Math.min(x1, x2);
+    const right = Math.max(x1, x2);
+    const top = Math.min(y1, y2);
+    const bottom = Math.max(y1, y2);
+    const points: Position[] = [];
+    for (let y = top; y <= bottom; y++) {
+      for (let x = left; x <= right; x++) {
+        if (filled || y === top || y === bottom || x === left || x === right) points.push({ x, y });
+      }
+    }
+    return points;
+  }
+
+  /**
+   * The connected area (4-neighbourhood) of pixels that are in the same state as (x, y), within the
+   * shape's bounds — what a paint bucket would fill.
+   */
+  fillRegion(shape: Shape, x: number, y: number): Position[] {
+    const { width, height } = shape.size;
+    if (x < 0 || y < 0 || x >= width || y >= height) return [];
+    const lit = new Set(shape.pattern.filter(p => p.active === true).map(p => `${p.position.x},${p.position.y}`));
+    const target = lit.has(`${x},${y}`);
+    const seen = new Set<string>();
+    const region: Position[] = [];
+    const stack: Position[] = [{ x, y }];
+    while (stack.length) {
+      const p = stack.pop()!;
+      const key = `${p.x},${p.y}`;
+      if (p.x < 0 || p.y < 0 || p.x >= width || p.y >= height || seen.has(key) || lit.has(key) !== target) continue;
+      seen.add(key);
+      region.push(p);
+      stack.push({ x: p.x + 1, y: p.y }, { x: p.x - 1, y: p.y }, { x: p.x, y: p.y + 1 }, { x: p.x, y: p.y - 1 });
+    }
+    return region;
   }
 
   transformShapeToGrid(shape: Shape, gridId: string = shape.id, gridDescription: string = shape.description): Grid {

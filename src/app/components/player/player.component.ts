@@ -107,7 +107,7 @@ export class PlayerComponent {
   }
 
   onKeydown(event: KeyboardEvent) {
-    if ((event.target as HTMLElement | null)?.closest('input, textarea')) return;
+    if (event.target instanceof Element && event.target.closest('input, textarea')) return;
     const actions: Record<string, () => void> = {
       ' ': () => this.player.toggle(),
       'k': () => this.player.toggle(),

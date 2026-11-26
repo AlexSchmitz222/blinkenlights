@@ -18,6 +18,25 @@ import { TranslatePipe } from '../../core/i18n/translate.pipe';
 import { shapeDeletionMessage } from '../shape-list/shape-deletion';
 
 export const SHAPE_MAX_SIZE = { width: 39, height: 21 };
+const HISTORY_LIMIT = 200;
+
+export type DrawTool = 'pencil' | 'line' | 'rect' | 'rectFilled' | 'fill';
+
+interface ToolDefinition {
+  id: DrawTool;
+  icon: string;
+  label: TranslationKey;
+  key: string;
+}
+
+/** Drawing tools with their keyboard shortcut. */
+export const DRAW_TOOLS: ToolDefinition[] = [
+  { id: 'pencil', icon: 'pencil', label: 'shapeEditor.toolPencil', key: 'p' },
+  { id: 'line', icon: 'vector-line', label: 'shapeEditor.toolLine', key: 'l' },
+  { id: 'rect', icon: 'rectangle-outline', label: 'shapeEditor.toolRect', key: 'r' },
+  { id: 'rectFilled', icon: 'rectangle', label: 'shapeEditor.toolRectFilled', key: 'b' },
+  { id: 'fill', icon: 'format-color-fill', label: 'shapeEditor.toolFill', key: 'f' },
+];
 const NEW_SHAPE_SIZE = { width: 8, height: 8 };
 
 @Component({
@@ -55,9 +74,18 @@ export class ShapeDetailsComponent implements HasUnsavedChanges {
     { icon: 'invert-colors', label: 'shapeEditor.invert', action: () => this.invert() },
     { icon: 'eraser', label: 'shapeEditor.clear', action: () => this.clear() },
   ];
+  readonly drawTools = DRAW_TOOLS;
+  readonly tool = signal<DrawTool>('pencil');
   readonly shape = signal<Shape | null>(null);
   readonly isNew = computed(() => this.shapeId() === 'new');
   readonly debug = signal(false);
+
+  // undo/redo: snapshots of the shape before each change (a whole stroke counts as one change)
+  private past = signal<Shape[]>([]);
+  private future = signal<Shape[]>([]);
+  private lastCoalesceKey: string | null = null;
+  readonly canUndo = computed(() => this.past().length > 0);
+  readonly canRedo = computed(() => this.future().length > 0);
 
   /** JSON of the last saved state; used to detect unsaved changes. */
   private savedSnapshot = signal('');
@@ -89,6 +117,9 @@ export class ShapeDetailsComponent implements HasUnsavedChanges {
   });
 
   private paintValue = true;
+  /** For line/rectangle: where the drag started and the shape before it (the preview is redrawn from it). */
+  private stroke: { start: { x: number; y: number }; base: Shape; id: number } | null = null;
+  private strokeCount = 0;
 
   constructor() {
     effect(() => {
@@ -117,33 +148,104 @@ export class ShapeDetailsComponent implements HasUnsavedChanges {
       shape = stored ? structuredClone(stored) : null;
     }
     this.shape.set(shape);
+    this.past.set([]);
+    this.future.set([]);
+    this.lastCoalesceKey = null;
     // A brand-new shape counts as unsaved only once something was drawn or renamed.
     this.savedSnapshot.set(shape ? JSON.stringify(shape) : '');
   }
 
   // --- editing ---------------------------------------------------------------------------------
 
-  private edit(fn: (shape: Shape) => Shape) {
-    this.shape.update(shape => (shape ? fn(shape) : shape));
+  /**
+   * Applies a change and records it for undo. Consecutive changes with the same `coalesceKey`
+   * (one stroke, typing into one field) become a single undo step.
+   */
+  private edit(fn: (shape: Shape) => Shape, coalesceKey?: string) {
+    const current = this.shape();
+    if (!current) return;
+    const next = fn(current);
+    if (next === current) return;
+    if (!coalesceKey || coalesceKey !== this.lastCoalesceKey) {
+      this.past.update(past => [...past, current].slice(-HISTORY_LIMIT));
+    }
+    this.future.set([]);
+    this.lastCoalesceKey = coalesceKey ?? null;
+    this.shape.set(next);
+  }
+
+  undo() {
+    const past = this.past();
+    const current = this.shape();
+    if (!past.length || !current) return;
+    this.future.update(f => [...f, current]);
+    this.past.set(past.slice(0, -1));
+    this.shape.set(past[past.length - 1]);
+    this.lastCoalesceKey = null;
+  }
+
+  redo() {
+    const future = this.future();
+    const current = this.shape();
+    if (!future.length || !current) return;
+    this.past.update(p => [...p, current]);
+    this.future.set(future.slice(0, -1));
+    this.shape.set(future[future.length - 1]);
+    this.lastCoalesceKey = null;
   }
 
   onPixel(event: PixelPointerEvent) {
     const shape = this.shape();
     if (!shape) return;
+    const tool = this.tool();
+    const { x, y } = event;
+
     if (event.phase === 'start') {
-      // Right click always erases; otherwise the first pixel decides whether this stroke draws or erases.
-      this.paintValue = event.button === 2 ? false : !this.shapeService.isPixelOn(shape, event.x, event.y);
+      this.strokeCount++;
+      // Right click always erases. The pencil toggles: starting on a lit pixel erases.
+      this.paintValue = event.button === 2 ? false : tool === 'pencil' || tool === 'fill' ? !this.shapeService.isPixelOn(shape, x, y) : true;
+      this.stroke = { start: { x, y }, base: shape, id: this.strokeCount };
     }
-    if (this.shapeService.isPixelOn(shape, event.x, event.y) === this.paintValue) return;
-    this.edit(s => this.shapeService.setPixel(s, event.x, event.y, this.paintValue));
+    const key = `stroke:${this.strokeCount}`;
+
+    switch (tool) {
+      case 'pencil':
+        if (this.shapeService.isPixelOn(shape, x, y) === this.paintValue) return;
+        this.edit(s => this.shapeService.setPixel(s, x, y, this.paintValue), key);
+        break;
+      case 'fill':
+        if (event.phase !== 'start') return;
+        this.edit(s => this.shapeService.setPixels(s, this.shapeService.fillRegion(s, x, y), this.paintValue), key);
+        break;
+      case 'line':
+      case 'rect':
+      case 'rectFilled': {
+        if (!this.stroke) return;
+        const { start, base } = this.stroke;
+        const points = tool === 'line'
+          ? this.shapeService.linePoints(start.x, start.y, x, y)
+          : this.shapeService.rectPoints(start.x, start.y, x, y, tool === 'rectFilled');
+        // always redraw from the shape before the drag, so moving the pointer back shrinks the preview
+        this.edit(() => this.shapeService.setPixels(base, points, this.paintValue), key);
+        break;
+      }
+    }
+  }
+
+  onPixelEnd() {
+    this.stroke = null;
+  }
+
+  setTool(tool: DrawTool) {
+    this.tool.set(tool);
   }
 
   setName(name: string) {
-    this.edit(s => ({ ...s, name }));
+    this.edit(s => ({ ...s, name }), 'name');
   }
 
   setDescription(description: string) {
-    this.edit(s => ({ ...s, description }));
+    this.edit(s => ({ ...s, description }), 'description');
   }
 
   resize(dimension: 'width' | 'height', delta: number) {
@@ -153,7 +255,7 @@ export class ShapeDetailsComponent implements HasUnsavedChanges {
   setSize(dimension: 'width' | 'height', value: number) {
     if (!Number.isFinite(value)) return;
     const clamped = Math.min(this.maxSize[dimension], Math.max(this.minSize()[dimension], Math.round(value)));
-    this.edit(s => ({ ...s, size: { ...s.size, [dimension]: clamped } }));
+    this.edit(s => (s.size[dimension] === clamped ? s : { ...s, size: { ...s.size, [dimension]: clamped } }), `size:${dimension}`);
   }
 
   shift(dx: number, dy: number) {
@@ -218,13 +320,35 @@ export class ShapeDetailsComponent implements HasUnsavedChanges {
   // --- keyboard --------------------------------------------------------------------------------
 
   onKeydown(event: KeyboardEvent) {
-    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') {
+    const mod = event.ctrlKey || event.metaKey;
+    const key = event.key.toLowerCase();
+    if (mod && key === 's') {
       event.preventDefault();
       this.save();
       return;
     }
-    const target = event.target as HTMLElement | null;
-    if (target?.closest('input, textarea')) return;
+    // keys can also arrive on window/document, which have no closest()
+    const target = event.target instanceof Element ? event.target : null;
+    if (target?.closest('input, textarea, .cdk-overlay-container')) return;
+    if (mod && key === 'z') {
+      event.preventDefault();
+      if (event.shiftKey) this.redo();
+      else this.undo();
+      return;
+    }
+    if (mod && key === 'y') {
+      event.preventDefault();
+      this.redo();
+      return;
+    }
+    if (!mod && !event.altKey) {
+      const tool = DRAW_TOOLS.find(t => t.key === key);
+      if (tool) {
+        event.preventDefault();
+        this.setTool(tool.id);
+      }
+      return;
+    }
     if (!event.altKey) return;
     const moves: Record<string, [number, number]> = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
     const move = moves[event.key];

@@ -48,4 +48,67 @@ describe('ShapeDetailsComponent', () => {
     component.setSize('width', 2);
     expect(component.shape()?.size.width).toBe(6);
   });
+
+  describe('drawing tools', () => {
+    const lit = () => component.activeCount();
+    const down = (x: number, y: number, button = 0) => component.onPixel({ x, y, phase: 'start', button });
+    const move = (x: number, y: number, button = 0) => component.onPixel({ x, y, phase: 'move', button });
+    const up = () => component.onPixelEnd();
+
+    it('previews a line while dragging and keeps only the final one', () => {
+      component.setTool('line');
+      down(0, 0);
+      move(7, 0);
+      expect(lit()).toBe(8);
+      move(3, 0); // dragging back shrinks the preview
+      expect(lit()).toBe(4);
+      up();
+      expect(lit()).toBe(4);
+    });
+
+    it('draws outlined and filled rectangles', () => {
+      component.setTool('rect');
+      down(0, 0); move(3, 2); up();
+      expect(lit()).toBe(10); // 4×3 outline
+      component.setTool('rectFilled');
+      down(5, 5); move(6, 6); up();
+      expect(lit()).toBe(14);
+    });
+
+    it('erases with the right mouse button', () => {
+      component.setTool('rectFilled');
+      down(0, 0); move(3, 3); up();
+      component.setTool('line');
+      down(0, 0, 2); move(3, 0, 2); up();
+      expect(lit()).toBe(12);
+    });
+
+    it('fills a closed area', () => {
+      component.setTool('rect');
+      down(0, 0); move(4, 4); up(); // 5×5 outline = 16 pixels
+      component.setTool('fill');
+      down(2, 2); up();
+      expect(lit()).toBe(25);
+    });
+
+    it('undoes a whole stroke in one step and redoes it', () => {
+      down(0, 0); move(1, 0); move(2, 0); up(); // pencil stroke of 3 pixels
+      down(5, 5); up();
+      expect(lit()).toBe(4);
+      component.undo();
+      expect(lit()).toBe(3);
+      component.undo();
+      expect(lit()).toBe(0);
+      expect(component.canUndo()).toBe(false);
+      component.redo();
+      expect(lit()).toBe(3);
+    });
+
+    it('switches tools with the keyboard', () => {
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'l' }));
+      expect(component.tool()).toBe('line');
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'f' }));
+      expect(component.tool()).toBe('fill');
+    });
+  });
 });

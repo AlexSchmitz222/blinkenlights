@@ -92,6 +92,29 @@ describe('shape editor', () => {
   });
 });
 
+describe('shape editor tools', () => {
+  it('draws a line by dragging with the line tool, and undoes it', async () => {
+    await go(page, '/shapes/new');
+    const lit = async () => Number((await text(page, '.canvas-bar span:nth-child(3)')).match(/\d+/)[0]);
+    await page.keyboard.press('l');
+
+    const cells = await page.$$('.canvas .cell');
+    const first = await cells[0].boundingBox(); // new shapes are 8×8: cell 0 is top-left, cell 7 top-right
+    const last = await cells[7].boundingBox();
+    await page.mouse.move(first.x + first.width / 2, first.y + first.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(last.x + last.width / 2, last.y + last.height / 2, { steps: 8 });
+    await page.mouse.up();
+    assert.equal(await lit(), 8, 'a full row is lit');
+    await screenshot(page, 'shape-editor-line-tool');
+
+    await page.keyboard.down('Control');
+    await page.keyboard.press('z');
+    await page.keyboard.up('Control');
+    assert.equal(await lit(), 0, 'the whole line is undone in one step');
+  });
+});
+
 describe('show editor', () => {
   beforeEach(async () => {
     await go(page, '/shows/show_demo_welcome');

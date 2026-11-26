@@ -878,7 +878,8 @@ export class ShowEditorComponent implements HasUnsavedChanges {
   // --- keyboard --------------------------------------------------------------------------------
 
   onKeydown(event: KeyboardEvent) {
-    const target = event.target as HTMLElement | null;
+    // keys can also arrive on window/document, which have no closest()
+    const target = event.target instanceof Element ? event.target : null;
     if (target?.closest('.cdk-overlay-container')) return; // dialogs and menus handle their own keys
     const typing = !!target?.closest('input, textarea, select, mat-select, [contenteditable]');
     const mod = event.ctrlKey || event.metaKey;

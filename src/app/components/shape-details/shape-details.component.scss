@@ -103,6 +103,11 @@
   font-size: 12px;
 }
 
+.draw-tool.active {
+  color: var(--bl-accent);
+  background: var(--bl-accent-soft);
+}
+
 .tool-grid {
   display: grid;
   grid-template-columns: repeat(4, 40px);

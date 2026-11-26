@@ -9,6 +9,12 @@
         <span class="chip unsaved" [matTooltip]="'common.unsavedTooltip' | t">{{ 'common.unsaved' | t }}</span>
       }
       <span class="spacer"></span>
+      <button matIconButton (click)="undo()" [disabled]="!canUndo()" [matTooltip]="'editor.undoTooltip' | t" [attr.aria-label]="'common.undo' | t">
+        <mat-icon svgIcon="undo" />
+      </button>
+      <button matIconButton (click)="redo()" [disabled]="!canRedo()" [matTooltip]="'editor.redoTooltip' | t" [attr.aria-label]="'common.redo' | t">
+        <mat-icon svgIcon="redo" />
+      </button>
       @if (!isNew()) {
         <button matButton (click)="delete()">
           <mat-icon svgIcon="delete" />
@@ -23,6 +29,25 @@
 
     <div class="body">
       <aside class="sidebar">
+        <section>
+          <h2 class="panel-title">{{ 'shapeEditor.draw' | t }}</h2>
+          <div class="tool-grid" role="radiogroup" [attr.aria-label]="'shapeEditor.draw' | t">
+            @for (t of drawTools; track t.id) {
+              <button
+                matIconButton
+                class="draw-tool"
+                role="radio"
+                [attr.aria-checked]="tool() === t.id"
+                [class.active]="tool() === t.id"
+                (click)="setTool(t.id)"
+                [matTooltip]="(t.label | t) + ' (' + t.key.toUpperCase() + ')'"
+                [attr.aria-label]="t.label | t">
+                <mat-icon [svgIcon]="t.icon" />
+              </button>
+            }
+          </div>
+        </section>
+
         <section>
           <h2 class="panel-title">{{ 'shapeEditor.details' | t }}</h2>
           <mat-form-field appearance="outline" class="field">
@@ -98,7 +123,8 @@
           [interactive]="true"
           [fade]="0"
           [debug]="debug()"
-          (pixelPointer)="onPixel($event)" />
+          (pixelPointer)="onPixel($event)"
+          (pixelPointerEnd)="onPixelEnd()" />
         <footer class="canvas-bar muted">
           <span>{{ shape.size.width }} × {{ shape.size.height }}</span>
           <span>·</span>

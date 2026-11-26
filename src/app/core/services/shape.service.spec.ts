@@ -68,4 +68,37 @@ describe('ShapeService', () => {
     expect(shape.pattern.length).toBe(2);
     expect(shape.inverted).toBe(false);
   });
+
+  describe('drawing tools', () => {
+    const empty: Shape = { id: 'e', name: 'E', description: '', size: { width: 5, height: 4 }, pattern: [], inverted: false };
+    const ascii = (s: Shape) => service.transformShapeToGrid(s).pixels.map(r => r.map(p => (p.active ? '#' : '.')).join(''));
+
+    it('draws lines in every direction, including both ends', () => {
+      expect(service.linePoints(0, 0, 3, 0)).toEqual([{ x: 0, y: 0 }, { x: 1, y: 0 }, { x: 2, y: 0 }, { x: 3, y: 0 }]);
+      expect(service.linePoints(2, 3, 2, 1).map(p => p.y)).toEqual([3, 2, 1]);
+      expect(ascii(service.setPixels(empty, service.linePoints(0, 0, 4, 3), true))).toEqual(['#....', '.##..', '...#.', '....#']);
+      expect(service.linePoints(1, 1, 1, 1)).toEqual([{ x: 1, y: 1 }]);
+    });
+
+    it('draws outlined and filled rectangles from corners in any order', () => {
+      expect(ascii(service.setPixels(empty, service.rectPoints(3, 2, 0, 0, false), true))).toEqual(['####.', '#..#.', '####.', '.....']);
+      expect(ascii(service.setPixels(empty, service.rectPoints(1, 1, 2, 3, true), true))).toEqual(['.....', '.##..', '.##..', '.##..']);
+    });
+
+    it('ignores points outside the shape and erases with on = false', () => {
+      let s = service.setPixels(empty, [{ x: -1, y: 0 }, { x: 5, y: 0 }, { x: 0, y: 0 }], true);
+      expect(s.pattern).toEqual([{ position: { x: 0, y: 0 }, active: true }]);
+      s = service.setPixels(s, [{ x: 0, y: 0 }], false);
+      expect(s.pattern).toEqual([]);
+    });
+
+    it('fills the connected area of the same state, bounded by the other state', () => {
+      // a vertical wall in column 2 splits the shape into two areas
+      const walled = service.setPixels(empty, service.linePoints(2, 0, 2, 3), true);
+      expect(service.fillRegion(walled, 0, 0).length).toBe(8); // left side: 2 columns × 4 rows
+      expect(service.fillRegion(walled, 4, 3).length).toBe(8); // right side
+      expect(service.fillRegion(walled, 2, 1).length).toBe(4); // the wall itself
+      expect(service.fillRegion(walled, 9, 9)).toEqual([]);
+    });
+  });
 });
