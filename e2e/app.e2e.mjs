@@ -231,9 +231,16 @@ describe('show editor', () => {
     const frames = await page.$$('.timeline .frame');
     await frames[1].click({ button: 'right' });
     await page.waitForSelector('.mat-mdc-menu-panel');
-    const hintHeights = await page.$$eval('.mat-mdc-menu-panel .kbd-hint', els => els.map(e => e.getBoundingClientRect().height));
-    assert.ok(hintHeights.length > 0);
-    assert.ok(hintHeights.every(h => h < 20), 'shortcut hints do not wrap');
+    const hints = await page.$$eval('.mat-mdc-menu-panel .kbd-hint', els =>
+      els.map(e => {
+        const hint = e.getBoundingClientRect();
+        const item = e.closest('.mat-mdc-menu-item').getBoundingClientRect();
+        return { height: hint.height, offset: Math.abs(hint.y + hint.height / 2 - (item.y + item.height / 2)) };
+      }),
+    );
+    assert.ok(hints.length > 0);
+    assert.ok(hints.every(h => h.height < 28), 'shortcut hints do not wrap (one line is ~20 px, two would be 32+)');
+    assert.ok(hints.every(h => h.offset <= 2), 'shortcut hints sit on the same line as their label');
     await screenshot(page, 'show-editor-context-menu');
   });
 

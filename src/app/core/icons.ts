@@ -20,6 +20,7 @@ export const ICONS = [
   'close',
   'content-copy',
   'content-cut',
+  'content-duplicate',
   'content-paste',
   'content-save',
   'creation',

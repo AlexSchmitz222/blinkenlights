@@ -162,6 +162,44 @@ describe('ShowEditorComponent', () => {
     expect(document.querySelector('app-generator-dialog')).toBeNull();
   });
 
+  describe('clipboard', () => {
+    it('copies frames from one show and pastes them into another', () => {
+      editor.selectScene(0); // f1, f2
+      editor.copy();
+      storage.saveShow({ ...testShow, id: 'show_other', name: 'Other', scenes: [{ id: 'x', name: 'X', frames: [{ id: 'x1', duration: 50, objects: [] }] }] });
+      fixture.componentRef.setInput('showId', 'show_other');
+      fixture.detectChanges();
+      expect(editor.show()?.name).toBe('Other');
+
+      editor.paste();
+      const frames = editor.show()!.scenes[0].frames;
+      expect(frames.length).toBe(3);
+      expect(frames[0].id).toBe('x1');
+      expect(frames.slice(1).every(f => !['f1', 'f2'].includes(f.id))).toBe(true);
+      expect(editor.selectedFrames().length).toBe(2); // the pasted frames are selected
+    });
+
+    it('copies the selected object into another frame at the same position', () => {
+      editor.addText();
+      const original = editor.selectedObject()!;
+      editor.copy();
+      editor.selectFrame(1, 0);
+      editor.paste();
+      const pasted = editor.currentFrame()!.objects[0];
+      expect(pasted.id).not.toBe(original.id);
+      expect(pasted.position).toEqual(original.position);
+      expect(editor.selectedId()).toBe(pasted.id);
+    });
+
+    it('cuts frames: copied and removed, undo brings them back', () => {
+      editor.selectFrame(0, 1);
+      editor.cutFrames();
+      expect(editor.show()!.scenes[0].frames.map(f => f.id)).toEqual(['f1']);
+      editor.paste();
+      expect(editor.show()!.scenes[0].frames.length).toBe(2);
+    });
+  });
+
   describe('multi-select', () => {
     const durations = () => editor.show()!.scenes.flatMap(s => s.frames.map(f => f.duration));
     const selectedIds = () => editor.selectedFrames().map(f => f.frame.id);

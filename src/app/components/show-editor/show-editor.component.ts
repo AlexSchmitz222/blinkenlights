@@ -32,6 +32,7 @@ import { I18nService, TranslationKey } from '../../core/i18n/i18n.service';
 import { TranslatePipe } from '../../core/i18n/translate.pipe';
 import * as edit from '../../core/utils/show-edit';
 import { GifExportFlow } from '../show-list/gif-export.flow';
+import { ClipboardService } from '../../core/services/clipboard.service';
 
 interface HistoryEntry {
   show: Show;
@@ -68,6 +69,7 @@ export class ShowEditorComponent implements HasUnsavedChanges {
   private snackBar = inject(MatSnackBar);
   private i18n = inject(I18nService);
   private gifExport = inject(GifExportFlow);
+  readonly clipboard = inject(ClipboardService);
   readonly player = inject(PlayerService);
 
   /** Route parameter `/shows/:showId`. */
@@ -662,6 +664,61 @@ export class ShowEditorComponent implements HasUnsavedChanges {
     this.selectFrame(si, fi + 1);
   }
 
+  // --- clipboard -------------------------------------------------------------------------------
+
+  /** Ctrl+C: the selected object if there is one, otherwise the selected frames. */
+  copy() {
+    const object = this.selectedObject();
+    if (object) {
+      this.clipboard.copyObjects([object]);
+      this.snackBar.open(this.i18n.t('editor.copiedObject'), undefined, { duration: 1500 });
+    } else {
+      this.copyFrames();
+    }
+  }
+
+  /** Ctrl+X: copy, then remove what was copied. */
+  cut() {
+    if (this.selectedObject()) {
+      this.copy();
+      this.deleteSelected();
+    } else {
+      this.cutFrames();
+    }
+  }
+
+  copyFrames() {
+    const frames = this.selectedFrames().map(f => f.frame);
+    this.clipboard.copyFrames(frames);
+    this.snackBar.open(this.i18n.t('editor.copiedFrames', { count: frames.length }), undefined, { duration: 1500 });
+  }
+
+  cutFrames() {
+    this.copyFrames();
+    this.deleteFrames();
+  }
+
+  /** Ctrl+V: objects go into the current frame (same position), frames go after the current frame. */
+  paste() {
+    const si = this.sceneIndex();
+    const fi = this.frameIndex();
+    if (this.clipboard.kind() === 'objects') {
+      const objects = this.clipboard.pasteObjects();
+      if (!this.currentFrame() || !objects.length) return;
+      this.edit(show => objects.reduce((s, o) => edit.addObject(s, si, fi, o), show));
+      this.selectedId.set(objects.at(-1)!.id);
+      this.snackBar.open(this.i18n.t('editor.pastedObjects', { count: objects.length }), undefined, { duration: 1500 });
+    } else if (this.clipboard.kind() === 'frames') {
+      const frames = this.clipboard.pasteFrames();
+      if (!this.show()?.scenes[si] || !frames.length) return;
+      this.edit(show => edit.insertFrames(show, si, fi + 1, frames));
+      this.selectedFrameIds.set(new Set(frames.map(f => f.id)));
+      this.selectionAnchor = frames[0].id;
+      this.setCurrent(si, fi + 1);
+      this.snackBar.open(this.i18n.t('editor.pastedFrames', { count: frames.length }), undefined, { duration: 1500 });
+    }
+  }
+
   /**
    * Duplicates the selected frames. The copies are inserted (in order) right after the last
    * selected frame and become the new selection.
@@ -948,6 +1005,9 @@ export class ShowEditorComponent implements HasUnsavedChanges {
     if (mod && key === 'z' && !event.shiftKey) return this.handled(event, () => this.undo());
     if ((mod && key === 'z' && event.shiftKey) || (mod && key === 'y')) return this.handled(event, () => this.redo());
     if (mod && key === 'd') return this.handled(event, () => this.duplicateFrames());
+    if (mod && key === 'c') return this.handled(event, () => this.copy());
+    if (mod && key === 'x') return this.handled(event, () => this.cut());
+    if (mod && key === 'v') return this.handled(event, () => this.paste());
     if (mod && key === 'a') return this.handled(event, () => this.selectScene());
     if (mod || event.altKey) return;
 

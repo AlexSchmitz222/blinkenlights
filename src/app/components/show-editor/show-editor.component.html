@@ -162,7 +162,7 @@
             <div class="actions">
               <button matIconButton (click)="reorderSelected(1)" [matTooltip]="'editor.bringForward' | t" [attr.aria-label]="'editor.bringForward' | t"><mat-icon svgIcon="arrow-up" /></button>
               <button matIconButton (click)="reorderSelected(-1)" [matTooltip]="'editor.sendBackward' | t" [attr.aria-label]="'editor.sendBackward' | t"><mat-icon svgIcon="arrow-down" /></button>
-              <button matIconButton (click)="duplicateSelected()" [matTooltip]="'common.duplicate' | t" [attr.aria-label]="'editor.duplicateObject' | t"><mat-icon svgIcon="content-copy" /></button>
+              <button matIconButton (click)="duplicateSelected()" [matTooltip]="'common.duplicate' | t" [attr.aria-label]="'editor.duplicateObject' | t"><mat-icon svgIcon="content-duplicate" /></button>
               @if (multiSelection()) {
                 <button matIconButton (click)="applyObjectToSelection()" [matTooltip]="'editor.applyToSelection' | t: { count: selectedFrames().length }" [attr.aria-label]="'editor.applyToSelection' | t: { count: selectedFrames().length }"><mat-icon svgIcon="filmstrip" /></button>
               } @else {
@@ -204,7 +204,7 @@
               <button matButton class="link-button" (click)="applyDurationToScene()">{{ 'editor.durationForScene' | t }}</button>
             }
             <div class="actions">
-              <button matButton (click)="duplicateFrames()" [matTooltip]="'shortcuts.duplicate' | t"><mat-icon svgIcon="content-copy" />{{ 'common.duplicate' | t }}</button>
+              <button matButton (click)="duplicateFrames()" [matTooltip]="'shortcuts.duplicate' | t"><mat-icon svgIcon="content-duplicate" />{{ 'common.duplicate' | t }}</button>
               <button matButton (click)="deleteFrames()" [matTooltip]="'editor.deleteFramesTooltip' | t"><mat-icon svgIcon="delete" />{{ 'common.delete' | t }}</button>
             </div>
             @if (!multiSelection()) {
@@ -260,7 +260,7 @@
             </button>
             <mat-menu #sceneMenu="matMenu">
               <button mat-menu-item (click)="player.load(show); player.seekScene(si); player.play()"><mat-icon svgIcon="play" />{{ 'editor.previewScene' | t }}</button>
-              <button mat-menu-item (click)="duplicateScene(si)"><mat-icon svgIcon="content-copy" />{{ 'common.duplicate' | t }}</button>
+              <button mat-menu-item (click)="duplicateScene(si)"><mat-icon svgIcon="content-duplicate" />{{ 'common.duplicate' | t }}</button>
               <button mat-menu-item (click)="moveScene(si, -1)" [disabled]="si === 0"><mat-icon svgIcon="arrow-left" />{{ 'editor.moveLeft' | t }}</button>
               <button mat-menu-item (click)="moveScene(si, 1)" [disabled]="si === show.scenes.length - 1"><mat-icon svgIcon="arrow-right" />{{ 'editor.moveRight' | t }}</button>
               <button mat-menu-item (click)="deleteScene(si)"><mat-icon svgIcon="delete" />{{ 'common.delete' | t }}</button>
@@ -306,8 +306,11 @@
       </button>
       <!-- context menu for frames (opened by right click) -->
       <span class="menu-anchor" #frameMenuTrigger="matMenuTrigger" [matMenuTriggerFor]="frameMenu" [style.left.px]="menuPosition().x" [style.top.px]="menuPosition().y"></span>
-      <mat-menu #frameMenu="matMenu">
-        <button mat-menu-item (click)="duplicateFrames()"><mat-icon svgIcon="content-copy" />{{ multiSelection() ? ('editor.duplicateFrames' | t: { count: selectedFrames().length }) : ('common.duplicate' | t) }} <span class="kbd-hint">{{ 'shortcuts.duplicate' | t }}</span></button>
+      <mat-menu #frameMenu="matMenu" class="shortcut-menu">
+        <button mat-menu-item (click)="duplicateFrames()"><mat-icon svgIcon="content-duplicate" />{{ multiSelection() ? ('editor.duplicateFrames' | t: { count: selectedFrames().length }) : ('common.duplicate' | t) }} <span class="kbd-hint">{{ 'shortcuts.duplicate' | t }}</span></button>
+        <button mat-menu-item (click)="copyFrames()"><mat-icon svgIcon="content-copy" />{{ 'editor.copy' | t }} <span class="kbd-hint">{{ 'shortcuts.copy' | t }}</span></button>
+        <button mat-menu-item (click)="cutFrames()"><mat-icon svgIcon="content-cut" />{{ 'editor.cut' | t }} <span class="kbd-hint">{{ 'shortcuts.cut' | t }}</span></button>
+        <button mat-menu-item (click)="paste()" [disabled]="!clipboard.kind()"><mat-icon svgIcon="content-paste" />{{ 'editor.paste' | t }} <span class="kbd-hint">{{ 'shortcuts.paste' | t }}</span></button>
         <button mat-menu-item (click)="insertEmptyFrameAfter()"><mat-icon svgIcon="plus" />{{ 'editor.insertEmptyAfter' | t }}</button>
         <button mat-menu-item (click)="selectScene()"><mat-icon svgIcon="filmstrip" />{{ 'editor.selectScene' | t }} <span class="kbd-hint">{{ 'shortcuts.selectAll' | t }}</span></button>
         <button mat-menu-item (click)="deleteFrames()"><mat-icon svgIcon="delete" />{{ multiSelection() ? ('editor.deleteFrames' | t: { count: selectedFrames().length }) : ('common.delete' | t) }}</button>

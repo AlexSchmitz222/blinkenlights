@@ -6,12 +6,22 @@ You can use this app to draw pixel shapes, arrange them into frames and scenes, 
 
 ## Features
 
-- **Shape editor**: draw and erase by dragging, resize up to 39×21, and shift, flip, invert or clear the pattern.
-- **Show editor**: a single screen with a shape library, a stage where you drag objects around, a properties panel and a timeline. In the timeline you can drag & drop frames and scenes to reorder them. You can also select several frames with Ctrl/⌘ + click or Shift + click and change their duration, duplicate or delete them together. The editor also has undo/redo, onion skin and keyboard shortcuts.
-- **Generators**: build scrolling text, an object moving along a path, or a blinking frame without placing every frame by hand.
-- **Pixel font**: a 5×7 proportional font with lowercase letters, descenders, umlauts and a ♥. One line of text is 8 pixels tall, so it fits the original 18×8 building.
-- **Player**: a fullscreen player with a house-front view, looping, frame stepping and controls that hide while the show plays.
+- **Shape editor**: draw with pencil, line, rectangle, filled rectangle and fill. The right mouse button erases with every tool. You can resize up to 39×21, shift, flip, invert or clear the pattern, and undo/redo every step.
+- **Image import**: turn a picture (for example a logo) into a shape. A live preview lets you set the width, the brightness threshold and invert.
+- **Show editor**: a single screen with a shape library, a stage where you drag objects around, a properties panel and a timeline. In the timeline you can drag & drop frames and scenes to reorder them. You can also select several frames with Ctrl/⌘ + click or Shift + click and change their duration, duplicate or delete them together. Frames and objects can be copied, cut and pasted, also from one show into another. The editor also has undo/redo, onion skin and keyboard shortcuts.
+- **Generators**: build these without placing every frame by hand:
+  - scrolling text
+  - an object moving along a path
+  - a blinking frame
+  - typewriter text
+  - random sparkles
+  - a wipe to the next frame
+- **Pixel fonts**:
+  - a 5×7 proportional font with lowercase letters, descenders, umlauts and a ♥. One line of text is 8 pixels tall, so it fits the original 18×8 building.
+  - a small 3×5 font with capitals only, which fits 4 instead of 3 characters on that building.
+- **Player**: a fullscreen player with a house-front view, looping, frame stepping, speeds from 0.25× to 2×, and controls that hide while the show plays.
 - **Grid presets**: Blinkenlights (18×8, Berlin 2001), Arcade (26×20, Paris 2002) and Wide (39×21).
+- **Animated GIF export**: in the house-front or the pixel look, in three sizes. A GIF can be shared anywhere, also with people who don't have the app.
 - **Import/export**:
   - `.blinken.json` files: a single show together with the shapes it uses, or a full backup.
   - The original **BLM** and **BML** movie formats, including grayscale BML.
@@ -56,9 +66,9 @@ How imports handle conflicts:
 
 | Where | Keys |
 |---|---|
-| Player | <kbd>Space</kbd> play/pause · <kbd>←</kbd>/<kbd>→</kbd> step · <kbd>Home</kbd> back to start · <kbd>L</kbd> loop · <kbd>V</kbd> house front / pixels · <kbd>F</kbd> fullscreen |
-| Show editor | <kbd>Space</kbd> preview · <kbd>Ctrl</kbd>+<kbd>S</kbd> save · <kbd>Ctrl</kbd>+<kbd>Z</kbd> / <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd> undo/redo · <kbd>Ctrl</kbd>+click / <kbd>Shift</kbd>+click select several frames · <kbd>Ctrl</kbd>+<kbd>A</kbd> select the scene · <kbd>Ctrl</kbd>+<kbd>D</kbd> duplicate selected frames · arrows move the selected object (<kbd>Shift</kbd> = 5 px), or step through frames when nothing is selected · <kbd>,</kbd>/<kbd>.</kbd> previous/next frame · <kbd>Del</kbd> delete the selected object, or the selected frames · <kbd>Esc</kbd> deselect · <kbd>O</kbd> onion skin |
-| Shape editor | <kbd>Ctrl</kbd>+<kbd>S</kbd> save · <kbd>Alt</kbd>+arrows shift the pattern · right-drag erases |
+| Player | <kbd>Space</kbd> play/pause · <kbd>←</kbd>/<kbd>→</kbd> step · <kbd>Home</kbd> back to start · <kbd>L</kbd> loop · <kbd>V</kbd> house front / pixels · <kbd>−</kbd>/<kbd>+</kbd> slower/faster · <kbd>F</kbd> fullscreen |
+| Show editor | <kbd>Space</kbd> preview · <kbd>Ctrl</kbd>+<kbd>S</kbd> save · <kbd>Ctrl</kbd>+<kbd>Z</kbd> / <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd> undo/redo · <kbd>Ctrl</kbd>+click / <kbd>Shift</kbd>+click select several frames · <kbd>Ctrl</kbd>+<kbd>A</kbd> select the scene · <kbd>Ctrl</kbd>+<kbd>D</kbd> duplicate selected frames · <kbd>Ctrl</kbd>+<kbd>C</kbd> / <kbd>X</kbd> / <kbd>V</kbd> copy, cut, paste (the selected object, or the selected frames) · arrows move the selected object (<kbd>Shift</kbd> = 5 px), or step through frames when nothing is selected · <kbd>,</kbd>/<kbd>.</kbd> previous/next frame · <kbd>Del</kbd> delete the selected object, or the selected frames · <kbd>Esc</kbd> deselect · <kbd>O</kbd> onion skin |
+| Shape editor | <kbd>P</kbd> pencil · <kbd>L</kbd> line · <kbd>R</kbd> rectangle · <kbd>B</kbd> filled rectangle · <kbd>F</kbd> fill · <kbd>Ctrl</kbd>+<kbd>Z</kbd> / <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd> undo/redo · <kbd>Ctrl</kbd>+<kbd>S</kbd> save · <kbd>Alt</kbd>+arrows shift the pattern · right mouse button erases |
 
 ## Development
 
@@ -137,6 +147,7 @@ Icons come from [Material Design Icons](https://pictogrammers.com/library/mdi/) 
 
 - Icons: Material Design Icons by Pictogrammers, Apache 2.0 (`public/icons/LICENSE`)
 - Font: JetBrains Mono, SIL Open Font License 1.1 (`public/fonts/OFL.txt`)
+- GIF encoding: [gifenc](https://github.com/mattdesl/gifenc) by Matt DesLauriers, MIT
 - Inspired by Project Blinkenlights by the Chaos Computer Club, 2001
 
 ## Roadmap

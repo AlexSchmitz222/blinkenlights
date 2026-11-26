@@ -146,6 +146,27 @@ body {
   margin-right: 0 !important;
 }
 
+// Menus that show keyboard shortcuts: wide enough to keep label and shortcut on one line,
+// with the shortcut pushed to the right.
+.shortcut-menu.mat-mdc-menu-panel {
+  max-width: 360px;
+
+  .mat-mdc-menu-item-text {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    white-space: nowrap;
+  }
+
+  .kbd-hint {
+    flex-shrink: 0;
+    margin-left: auto;
+    font-size: 11px;
+    white-space: nowrap;
+    color: var(--bl-text-muted);
+  }
+}
+
 // Compact icon buttons for dense panels (scene headers, panel titles).
 .icon-btn-sm {
   @include mat.icon-button-overrides((
