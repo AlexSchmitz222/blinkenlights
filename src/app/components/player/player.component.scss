@@ -1,3 +1,5 @@
+@use '@angular/material' as mat;
+
 // The player is always dark, like the real house front at night.
 :host {
   position: fixed;
@@ -66,9 +68,17 @@
   gap: 2px;
   padding: 4px 12px 10px;
 
-  .play mat-icon {
-    width: 28px;
-    height: 28px;
+  .play {
+    // Material sizes icons in icon buttons through this token (the SVG is created at runtime, so a
+    // component-scoped selector can't reach it)
+    @include mat.icon-button-overrides((
+      icon-size: 28px,
+    ));
+
+    mat-icon {
+      width: 28px;
+      height: 28px;
+    }
   }
 
   .active {

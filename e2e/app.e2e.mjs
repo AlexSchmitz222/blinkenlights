@@ -208,6 +208,49 @@ describe('language and theme', () => {
   });
 });
 
+describe('icons', () => {
+  /**
+   * For every visible icon: the vertical distance between the icon's centre and the centre of the text
+   * next to it (or of the control it sits in, for icon-only buttons). Icons used to sit a few px low
+   * because inline SVGs align to the text baseline.
+   */
+  const misaligned = () =>
+    [...document.querySelectorAll('mat-icon')]
+      .filter(icon => icon.getBoundingClientRect().height > 0 && !icon.closest('.play-overlay'))
+      .map(icon => {
+        const control = icon.closest('button, a, .layer, .lib-item, .chip, h2, h3, li') ?? icon.parentElement;
+        const svg = (icon.querySelector('svg') ?? icon).getBoundingClientRect();
+        const label = [...control.querySelectorAll('span, .mdc-button__label')].find(s => s.textContent.trim() && !s.contains(icon));
+        const ref = (label ?? control).getBoundingClientRect();
+        const offset = svg.y + svg.height / 2 - (ref.y + ref.height / 2);
+        return { icon: icon.getAttribute('svgicon') ?? icon.closest('button, a')?.getAttribute('aria-label'), offset: Math.round(offset * 10) / 10 };
+      })
+      .filter(m => Math.abs(m.offset) > 1.5);
+
+  for (const route of ['/', '/shows', '/shapes', '/shapes/heart_filled', '/shows/show_demo_welcome', '/play/show_demo_berlin']) {
+    it(`are vertically centred on ${route}`, async () => {
+      await go(page, route);
+      await page.mouse.move(400, 830); // keeps the player controls visible
+      await sleep(300);
+      assert.deepEqual(await page.evaluate(misaligned), []);
+    });
+  }
+
+  it('are vertically centred in menus and the object panel', async () => {
+    await go(page, '/shows/show_demo_welcome');
+    const grid = await page.$('.stage-area .grid');
+    const box = await grid.boundingBox();
+    await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+    await page.waitForSelector('.stage-area .highlight');
+    assert.deepEqual(await page.evaluate(misaligned), [], 'object panel');
+
+    const frames = await page.$$('.timeline .frame');
+    await frames[1].click({ button: 'right' });
+    await page.waitForSelector('.mat-mdc-menu-panel');
+    assert.deepEqual(await page.evaluate(misaligned), [], 'frame context menu');
+  });
+});
+
 describe('phone width', () => {
   for (const route of ['/', '/shows', '/shapes', '/shapes/heart_filled', '/shows/show_demo_welcome', '/play/show_demo_berlin']) {
     it(`has no horizontal page scroll on ${route}`, async () => {
