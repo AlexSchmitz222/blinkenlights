@@ -56,6 +56,9 @@
               <mat-icon svgIcon="cursor-move" />{{ 'editor.moveObject' | t }}
             </button>
             <button matButton (click)="openGenerator('blink')" [disabled]="!currentFrame()"><mat-icon svgIcon="magic-staff" />{{ 'editor.blinkFrame' | t }}</button>
+            <button matButton (click)="openGenerator('typewriter')" [disabled]="!currentFrame()"><mat-icon svgIcon="keyboard-outline" />{{ 'editor.typewriter' | t }}</button>
+            <button matButton (click)="openGenerator('sparkle')" [disabled]="!currentFrame()"><mat-icon svgIcon="creation" />{{ 'editor.sparkle' | t }}</button>
+            <button matButton (click)="openGenerator('wipe')" [disabled]="!currentFrame()"><mat-icon svgIcon="transition" />{{ 'editor.wipe' | t }}</button>
           </div>
         </section>
 

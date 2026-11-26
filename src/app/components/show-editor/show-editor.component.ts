@@ -839,6 +839,10 @@ export class ShowEditorComponent implements HasUnsavedChanges {
       this.snackBar.open(this.i18n.t('editor.selectObjectToMove'), undefined, { duration: 3000 });
       return;
     }
+    if (kind === 'wipe' && !this.nextFrame()) {
+      this.snackBar.open(this.i18n.t('editor.noNextFrame'), undefined, { duration: 3000 });
+      return;
+    }
     const data: GeneratorDialogData = {
       kind,
       from: this.selectedObject()?.position,
@@ -886,7 +890,47 @@ export class ShowEditorComponent implements HasUnsavedChanges {
         this.selectFrame(si, fi + 1);
         break;
       }
+      case 'typewriter': {
+        const frames = this.generator.typewriter(config.text, show.size, {
+          font: config.font,
+          stepDuration: config.stepDuration,
+          holdDuration: config.holdDuration,
+          background: frame?.objects ?? [],
+        });
+        this.edit(s => edit.insertFrames(s, si, fi + 1, frames));
+        this.selectFrame(si, fi + frames.length);
+        this.snackBar.open(this.i18n.t('editor.addedFrames', { count: frames.length }), undefined, { duration: 2500 });
+        break;
+      }
+      case 'sparkle': {
+        const frames = this.generator.sparkle(show.size, {
+          frames: config.frames,
+          density: config.density,
+          stepDuration: config.stepDuration,
+          background: config.keepFrame ? frame?.objects ?? [] : [],
+        });
+        this.edit(s => edit.insertFrames(s, si, fi + 1, frames));
+        this.selectFrame(si, fi + 1);
+        this.snackBar.open(this.i18n.t('editor.addedFrames', { count: frames.length }), undefined, { duration: 2500 });
+        break;
+      }
+      case 'wipe': {
+        const next = this.nextFrame();
+        if (!frame || !next) return;
+        const from = this.render.renderFrame(frame, show.size, this.resolveShape);
+        const to = this.render.renderFrame(next, show.size, this.resolveShape);
+        const frames = this.generator.wipe(from, to, { direction: config.direction, stepDuration: config.stepDuration });
+        this.edit(s => edit.insertFrames(s, si, fi + 1, frames));
+        this.selectFrame(si, fi + 1);
+        this.snackBar.open(this.i18n.t('editor.addedFrames', { count: frames.length }), undefined, { duration: 2500 });
+        break;
+      }
     }
+  }
+
+  /** The frame after the current one in play order (possibly the first frame of the next scene). */
+  private nextFrame(): Frame | null {
+    return this.frameAt(this.flatIndex(this.sceneIndex(), this.frameIndex()) + 1);
   }
 
   // --- keyboard --------------------------------------------------------------------------------

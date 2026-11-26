@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { ShowGeneratorService } from './show-generator.service';
-import { TextObject, ShapeObject } from '../interfaces/frame.interface';
+import { TextObject, ShapeObject, BitmapObject } from '../interfaces/frame.interface';
+import { GridService } from './grid.service';
 
 describe('ShowGeneratorService', () => {
   let gen: ShowGeneratorService;
@@ -60,5 +61,67 @@ describe('ShowGeneratorService', () => {
     expect(first.font).toBe('small');
     expect(first.position.y).toBe(1); // (8 - 5) / 2
     expect(frames.length).toBe(18 + 7 + 1); // HI is 7 px wide in the small font
+  });
+
+  describe('typewriter', () => {
+    it('adds one letter per frame, spaces together with the next letter, and holds the end', () => {
+      const frames = gen.typewriter('HI YO', { width: 39, height: 21 }, { stepDuration: 100, holdDuration: 900 });
+      expect(frames.map(f => (f.objects[0] as TextObject).text)).toEqual(['H', 'HI', 'HI Y', 'HI YO']);
+      expect(frames.map(f => f.duration)).toEqual([100, 100, 100, 900]);
+    });
+
+    it('keeps the text at the position of the finished, centred text', () => {
+      const frames = gen.typewriter('HI', { width: 19, height: 8 }); // HI = 9 px → x = 5
+      expect(new Set(frames.map(f => JSON.stringify(f.objects[0].position)))).toEqual(new Set([JSON.stringify({ x: 5, y: 0 })]));
+    });
+
+    it('draws on top of a background and supports the small font', () => {
+      const bg: ShapeObject = { id: 'bg', type: 'shape', shapeId: 'star', position: { x: 0, y: 0 } };
+      const frames = gen.typewriter('AB', { width: 18, height: 8 }, { font: 'small', background: [bg] });
+      expect(frames[0].objects[0].id).toBe('bg');
+      expect((frames[1].objects[1] as TextObject).font).toBe('small');
+    });
+  });
+
+  describe('sparkle', () => {
+    it('creates the requested number of transparent overlay frames with roughly the requested density', () => {
+      const frames = gen.sparkle({ width: 40, height: 25 }, { frames: 5, density: 0.1, seed: 42 });
+      expect(frames.length).toBe(5);
+      const bitmap = frames[0].objects[0] as BitmapObject;
+      expect(bitmap.transparent).toBe(true);
+      const lit = bitmap.rows.join('').split('').filter(c => c === '1').length;
+      expect(lit).toBeGreaterThan(50); // ~100 of 1000
+      expect(lit).toBeLessThan(150);
+    });
+
+    it('is repeatable with the same seed', () => {
+      const a = gen.sparkle({ width: 10, height: 5 }, { frames: 2, seed: 7 }).map(f => (f.objects[0] as BitmapObject).rows);
+      const b = gen.sparkle({ width: 10, height: 5 }, { frames: 2, seed: 7 }).map(f => (f.objects[0] as BitmapObject).rows);
+      expect(a).toEqual(b);
+    });
+  });
+
+  describe('wipe', () => {
+    const grids = () => TestBed.inject(GridService);
+    function grid(rows: string[]) {
+      const g = grids().generateEmptyGrid('g', { width: rows[0].length, height: rows.length });
+      rows.forEach((row, y) => [...row].forEach((c, x) => (g.pixels[y][x].active = c === '#')));
+      return g;
+    }
+    const rowsOf = (frames: ReturnType<ShowGeneratorService['wipe']>) => frames.map(f => (f.objects[0] as BitmapObject).rows);
+
+    it('pushes the new picture in column by column from the left', () => {
+      const frames = gen.wipe(grid(['....', '....']), grid(['####', '####']), { direction: 'left', stepDuration: 30 });
+      expect(rowsOf(frames)).toEqual([['1000', '1000'], ['1100', '1100'], ['1110', '1110']]);
+      expect(frames.every(f => f.duration === 30)).toBe(true);
+    });
+
+    it('wipes from the right, the top and the bottom', () => {
+      const from = grid(['...', '...']);
+      const to = grid(['###', '###']);
+      expect(rowsOf(gen.wipe(from, to, { direction: 'right' }))[0]).toEqual(['001', '001']);
+      expect(rowsOf(gen.wipe(from, to, { direction: 'top' }))).toEqual([['111', '000']]);
+      expect(rowsOf(gen.wipe(from, to, { direction: 'bottom' }))).toEqual([['000', '111']]);
+    });
   });
 });

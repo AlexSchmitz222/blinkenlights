@@ -65,4 +65,16 @@ describe('RenderService', () => {
     expect(render.getBounds({ id: 't', type: 'text', text: 'II', position: { x: 0, y: 0 }, inverted: true }, resolve))
       .toEqual({ x: -1, y: -1, width: 9, height: 10 });
   });
+
+  it('keeps what is underneath transparent bitmaps', () => {
+    const frame: Frame = {
+      id: 'f',
+      duration: 100,
+      objects: [
+        { id: 'a', type: 'shape', shapeId: 'bar', position: { x: 0, y: 0 } },
+        { id: 'b', type: 'bitmap', size: { width: 3, height: 1 }, rows: ['001'], position: { x: 0, y: 0 }, transparent: true },
+      ],
+    };
+    expect(ascii(render.renderFrame(frame, { width: 4, height: 1 }, resolve))).toEqual(['###.']);
+  });
 });

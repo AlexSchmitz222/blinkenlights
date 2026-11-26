@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
-import { Position, Size } from '../interfaces/grid.interface';
-import { Frame, FrameObject, TextObject } from '../interfaces/frame.interface';
+import { Grid, Position, Size } from '../interfaces/grid.interface';
+import { BitmapObject, Frame, FrameObject, TextObject } from '../interfaces/frame.interface';
 import { TextDrawService } from './text-draw.service';
 import { createId } from '../utils/id';
 
@@ -92,4 +92,137 @@ export class ShowGeneratorService {
     }
     return frames;
   }
+
+  /**
+   * Text that appears one character at a time (spaces don't get their own frame).
+   * The text stays where it will end up, centred like the finished text.
+   */
+  typewriter(text: string, gridSize: Size, options: TypewriterOptions = {}): Frame[] {
+    const font = options.font ?? 'regular';
+    const full = this.text.measureText(text, { font, spacing: options.spacing });
+    const x = options.x ?? Math.max(0, Math.floor((gridSize.width - full.width) / 2));
+    const y = options.y ?? Math.max(0, Math.floor((gridSize.height - full.height + (font === 'regular' ? 1 : 0)) / 2));
+    const stepDuration = options.stepDuration ?? 120;
+    const objectId = createId('obj');
+    const chars = [...text];
+
+    const frames: Frame[] = [];
+    for (let i = 1; i <= chars.length; i++) {
+      if (/\s/.test(chars[i - 1]) && i < chars.length) continue; // whitespace appears together with the next letter
+      const textObject: TextObject = {
+        id: objectId,
+        type: 'text',
+        text: chars.slice(0, i).join(''),
+        position: { x, y },
+        spacing: options.spacing,
+        ...(font !== 'regular' ? { font } : {}),
+      };
+      frames.push({
+        id: createId('frame'),
+        duration: i === chars.length ? (options.holdDuration ?? 1000) : stepDuration,
+        objects: [...structuredClone(options.background ?? []), textObject],
+      });
+    }
+    return frames;
+  }
+
+  /**
+   * Random lights flashing on top of the background. `density` is the share of lit pixels per frame
+   * (0–1). A seed makes the result repeatable.
+   */
+  sparkle(gridSize: Size, options: SparkleOptions = {}): Frame[] {
+    const count = Math.max(1, Math.round(options.frames ?? 12));
+    const density = Math.min(1, Math.max(0, options.density ?? 0.08));
+    const random = seededRandom(options.seed ?? Date.now());
+    const frames: Frame[] = [];
+    for (let f = 0; f < count; f++) {
+      const rows = Array.from({ length: gridSize.height }, () =>
+        Array.from({ length: gridSize.width }, () => (random() < density ? '1' : '0')).join(''),
+      );
+      const sparkles: BitmapObject = {
+        id: createId('obj'),
+        type: 'bitmap',
+        position: { x: 0, y: 0 },
+        size: { ...gridSize },
+        rows,
+        transparent: true,
+      };
+      frames.push({
+        id: createId('frame'),
+        duration: options.stepDuration ?? 100,
+        objects: [...structuredClone(options.background ?? []), sparkles],
+      });
+    }
+    return frames;
+  }
+
+  /**
+   * The in-between frames of a wipe from one picture to another: the new picture pushes in line by
+   * line from one side. The start and end pictures themselves are not included.
+   */
+  wipe(from: Grid, to: Grid, options: WipeOptions = {}): Frame[] {
+    const direction = options.direction ?? 'left';
+    const { width, height } = from.size;
+    const horizontal = direction === 'left' || direction === 'right';
+    const steps = horizontal ? width : height;
+    const frames: Frame[] = [];
+    for (let k = 1; k < steps; k++) {
+      const rows: string[] = [];
+      for (let y = 0; y < height; y++) {
+        let row = '';
+        for (let x = 0; x < width; x++) {
+          // how far the edge has moved in, measured from the side the wipe starts at
+          const pos = direction === 'left' ? x : direction === 'right' ? width - 1 - x : direction === 'top' ? y : height - 1 - y;
+          const source = pos < k ? to : from;
+          row += source.pixels[y]?.[x]?.active === true ? '1' : '0';
+        }
+        rows.push(row);
+      }
+      frames.push({
+        id: createId('frame'),
+        duration: options.stepDuration ?? 40,
+        objects: [{ id: createId('obj'), type: 'bitmap', position: { x: 0, y: 0 }, size: { width, height }, rows }],
+      });
+    }
+    return frames;
+  }
+}
+
+export interface TypewriterOptions {
+  font?: 'regular' | 'small';
+  x?: number;
+  y?: number;
+  spacing?: number;
+  /** ms per letter. */
+  stepDuration?: number;
+  /** How long the finished text stays, in ms. */
+  holdDuration?: number;
+  background?: FrameObject[];
+}
+
+export interface SparkleOptions {
+  frames?: number;
+  /** Share of lit pixels per frame, 0–1. */
+  density?: number;
+  stepDuration?: number;
+  seed?: number;
+  background?: FrameObject[];
+}
+
+export interface WipeOptions {
+  /** The side the new picture comes in from. */
+  direction?: 'left' | 'right' | 'top' | 'bottom';
+  stepDuration?: number;
+}
+
+/** Small, fast, seedable pseudo-random generator (mulberry32). */
+function seededRandom(seed: number): () => number {
+  let a = seed >>> 0;
+  return () => {
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
 }

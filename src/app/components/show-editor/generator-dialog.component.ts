@@ -10,7 +10,7 @@ import { Position } from '../../core/interfaces/grid.interface';
 import { I18nService, TranslationKey } from '../../core/i18n/i18n.service';
 import { TranslatePipe } from '../../core/i18n/translate.pipe';
 
-export type GeneratorKind = 'scroll' | 'move' | 'blink';
+export type GeneratorKind = 'scroll' | 'move' | 'blink' | 'typewriter' | 'sparkle' | 'wipe';
 
 export interface GeneratorDialogData {
   kind: GeneratorKind;
@@ -23,7 +23,10 @@ export interface GeneratorDialogData {
 export interface ScrollConfig { kind: 'scroll'; text: string; stepDuration: number; y: number; direction: 'left' | 'right'; inverted: boolean; font: 'regular' | 'small' }
 export interface MoveConfig { kind: 'move'; to: Position; steps: number; stepDuration: number }
 export interface BlinkConfig { kind: 'blink'; times: number; onDuration: number; offDuration: number; mode: 'off' | 'invert' }
-export type GeneratorConfig = ScrollConfig | MoveConfig | BlinkConfig;
+export interface TypewriterConfig { kind: 'typewriter'; text: string; font: 'regular' | 'small'; stepDuration: number; holdDuration: number }
+export interface SparkleConfig { kind: 'sparkle'; frames: number; density: number; stepDuration: number; keepFrame: boolean }
+export interface WipeConfig { kind: 'wipe'; direction: 'left' | 'right' | 'top' | 'bottom'; stepDuration: number }
+export type GeneratorConfig = ScrollConfig | MoveConfig | BlinkConfig | TypewriterConfig | SparkleConfig | WipeConfig;
 
 @Component({
   selector: 'app-generator-dialog',
@@ -103,6 +106,57 @@ export type GeneratorConfig = ScrollConfig | MoveConfig | BlinkConfig;
               <input matInput type="number" name="off" min="20" [(ngModel)]="blink.offDuration" />
             </mat-form-field>
           }
+          @case ('typewriter') {
+            <mat-form-field appearance="outline" class="wide">
+              <mat-label>{{ 'generator.text' | t }}</mat-label>
+              <input matInput name="text" [(ngModel)]="typewriter.text" required cdkFocusInitial />
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>{{ 'editor.font' | t }}</mat-label>
+              <mat-select name="font" [(ngModel)]="typewriter.font">
+                <mat-option value="regular">{{ 'editor.fontRegular' | t }}</mat-option>
+                <mat-option value="small">{{ 'editor.fontSmall' | t }}</mat-option>
+              </mat-select>
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>{{ 'generator.msPerLetter' | t }}</mat-label>
+              <input matInput type="number" name="step" min="20" [(ngModel)]="typewriter.stepDuration" />
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>{{ 'generator.holdEnd' | t }}</mat-label>
+              <input matInput type="number" name="hold" min="20" [(ngModel)]="typewriter.holdDuration" />
+            </mat-form-field>
+          }
+          @case ('sparkle') {
+            <mat-form-field appearance="outline">
+              <mat-label>{{ 'generator.frameCount' | t }}</mat-label>
+              <input matInput type="number" name="frames" min="1" max="200" [(ngModel)]="sparkle.frames" cdkFocusInitial />
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>{{ 'generator.density' | t }}</mat-label>
+              <input matInput type="number" name="density" min="1" max="100" [(ngModel)]="sparkle.density" />
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>{{ 'generator.msPerStep' | t }}</mat-label>
+              <input matInput type="number" name="step" min="20" [(ngModel)]="sparkle.stepDuration" />
+            </mat-form-field>
+            <mat-slide-toggle name="keep" [(ngModel)]="sparkle.keepFrame">{{ 'generator.keepFrame' | t }}</mat-slide-toggle>
+          }
+          @case ('wipe') {
+            <mat-form-field appearance="outline">
+              <mat-label>{{ 'generator.direction' | t }}</mat-label>
+              <mat-select name="direction" [(ngModel)]="wipe.direction">
+                <mat-option value="left">{{ 'generator.fromLeft' | t }}</mat-option>
+                <mat-option value="right">{{ 'generator.fromRight' | t }}</mat-option>
+                <mat-option value="top">{{ 'generator.fromTop' | t }}</mat-option>
+                <mat-option value="bottom">{{ 'generator.fromBottom' | t }}</mat-option>
+              </mat-select>
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>{{ 'generator.msPerStep' | t }}</mat-label>
+              <input matInput type="number" name="step" min="20" [(ngModel)]="wipe.stepDuration" />
+            </mat-form-field>
+          }
         }
       </form>
     </mat-dialog-content>
@@ -125,6 +179,10 @@ export class GeneratorDialogComponent {
   readonly scroll: ScrollConfig = { kind: 'scroll', text: inject(I18nService).t('generator.defaultText'), stepDuration: 70, y: this.data.defaultY?.regular ?? 0, direction: 'left', inverted: false, font: 'regular' };
   readonly move: MoveConfig = { kind: 'move', to: { x: (this.data.from?.x ?? 0) + 10, y: this.data.from?.y ?? 0 }, steps: 10, stepDuration: 80 };
   readonly blink: BlinkConfig = { kind: 'blink', times: 3, onDuration: 300, offDuration: 300, mode: 'off' };
+  readonly typewriter: TypewriterConfig = { kind: 'typewriter', text: inject(I18nService).t('generator.defaultText'), font: 'regular', stepDuration: 150, holdDuration: 1500 };
+  /** density in percent here; converted to 0–1 when generating */
+  readonly sparkle: SparkleConfig = { kind: 'sparkle', frames: 15, density: 8, stepDuration: 90, keepFrame: true };
+  readonly wipe: WipeConfig = { kind: 'wipe', direction: 'left', stepDuration: 40 };
 
   /** Switching the font re-centres the text vertically (the fonts have different heights). */
   setScrollFont(font: 'regular' | 'small') {
@@ -133,11 +191,17 @@ export class GeneratorDialogComponent {
   }
 
   get title(): TranslationKey {
-    return (({ scroll: 'generator.scrollTitle', move: 'generator.moveTitle', blink: 'generator.blinkTitle' }) as const)[this.data.kind];
+    return (({
+      scroll: 'generator.scrollTitle', move: 'generator.moveTitle', blink: 'generator.blinkTitle',
+      typewriter: 'generator.typewriterTitle', sparkle: 'generator.sparkleTitle', wipe: 'generator.wipeTitle',
+    }) as const)[this.data.kind];
   }
 
   get intro(): TranslationKey {
-    return (({ scroll: 'generator.scrollIntro', move: 'generator.moveIntro', blink: 'generator.blinkIntro' }) as const)[this.data.kind];
+    return (({
+      scroll: 'generator.scrollIntro', move: 'generator.moveIntro', blink: 'generator.blinkIntro',
+      typewriter: 'generator.typewriterIntro', sparkle: 'generator.sparkleIntro', wipe: 'generator.wipeIntro',
+    }) as const)[this.data.kind];
   }
 
   create() {
@@ -162,6 +226,21 @@ export class GeneratorDialogComponent {
           onDuration: clampMs(this.blink.onDuration),
           offDuration: clampMs(this.blink.offDuration),
         });
+        break;
+      case 'typewriter':
+        if (!this.typewriter.text.trim()) return;
+        this.dialogRef.close({ ...this.typewriter, stepDuration: clampMs(this.typewriter.stepDuration), holdDuration: clampMs(this.typewriter.holdDuration) });
+        break;
+      case 'sparkle':
+        this.dialogRef.close({
+          ...this.sparkle,
+          frames: Math.min(200, Math.max(1, Math.round(Number(this.sparkle.frames) || 1))),
+          density: Math.min(100, Math.max(1, Number(this.sparkle.density) || 1)) / 100,
+          stepDuration: clampMs(this.sparkle.stepDuration),
+        });
+        break;
+      case 'wipe':
+        this.dialogRef.close({ ...this.wipe, stepDuration: clampMs(this.wipe.stepDuration) });
         break;
     }
   }

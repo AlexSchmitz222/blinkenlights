@@ -50,6 +50,7 @@ export class RenderService {
         object.rows.forEach((row, dy) => {
           for (let dx = 0; dx < row.length; dx++) {
             const lit = row[dx] === '1';
+            if (object.transparent && !lit) continue;
             this.draw.drawPixel(grid, x + dx, y + dy, object.inverted ? !lit : lit, { clip: true });
           }
         });

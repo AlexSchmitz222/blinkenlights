@@ -136,6 +136,32 @@ describe('ShowEditorComponent', () => {
     expect((editor.selectedObject() as TextObject | null)?.text ?? (frameObjects()[0] as TextObject).text).toBe('Hi!');
   });
 
+  it('inserts typewriter frames after the current frame, on top of its content', () => {
+    editor.addText(); // something to keep underneath
+    (editor as unknown as { applyGenerator(c: unknown): void }).applyGenerator({
+      kind: 'typewriter', text: 'AB', font: 'regular', stepDuration: 100, holdDuration: 500,
+    });
+    const frames = editor.show()!.scenes[0].frames;
+    expect(frames.length).toBe(4); // f1, A, AB, f2
+    expect(frames[1].objects.length).toBe(2);
+    expect(frames[2].duration).toBe(500);
+    expect(frames[3].id).toBe('f2');
+  });
+
+  it('wipes from the current to the next frame, also across scenes', () => {
+    editor.selectFrame(0, 1);
+    (editor as unknown as { applyGenerator(c: unknown): void }).applyGenerator({ kind: 'wipe', direction: 'left', stepDuration: 30 });
+    // 18 px wide grid → 17 in-between frames, inserted at the end of scene 1, before scene 2
+    expect(editor.show()!.scenes[0].frames.length).toBe(2 + 17);
+    expect(editor.show()!.scenes[1].frames[0].id).toBe('f3');
+  });
+
+  it('does not open the wipe generator without a next frame', () => {
+    editor.selectFrame(1, 0); // the very last frame
+    editor.openGenerator('wipe');
+    expect(document.querySelector('app-generator-dialog')).toBeNull();
+  });
+
   describe('multi-select', () => {
     const durations = () => editor.show()!.scenes.flatMap(s => s.frames.map(f => f.duration));
     const selectedIds = () => editor.selectedFrames().map(f => f.frame.id);

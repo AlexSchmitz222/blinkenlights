@@ -32,6 +32,8 @@ export interface BitmapObject extends FrameObjectBase {
     type: 'bitmap';
     size: Size;
     rows: string[];
+    /** When true, '0' pixels leave what's underneath alone (used for overlays like sparkles). */
+    transparent?: boolean;
 }
 
 export type FrameObject = ShapeObject | TextObject | BitmapObject;
