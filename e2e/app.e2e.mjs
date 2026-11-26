@@ -128,6 +128,35 @@ describe('shape editor', () => {
   });
 });
 
+describe('image import', () => {
+  it('turns a picture into a shape with a live preview', async () => {
+    await go(page, '/shapes');
+    const input = await page.$('input[type=file][accept="image/*"]');
+    await input.uploadFile(new URL('./fixtures/heart.png', import.meta.url).pathname);
+    await page.waitForSelector('app-image-import-dialog app-pixel-grid .cell.on');
+
+    const litInPreview = () => page.$$eval('app-image-import-dialog .cell.on', cells => cells.length);
+    const before = await litInPreview();
+    assert.ok(before > 20, `the heart lights up in the preview (${before} lit)`);
+    assert.match(await text(page, 'app-image-import-dialog .slider b'), /^\d+ × \d+$/);
+
+    // inverting lights the background instead
+    await page.click('app-image-import-dialog mat-slide-toggle button');
+    await sleep(200);
+    assert.notEqual(await litInPreview(), before, 'invert changes the result');
+    await page.click('app-image-import-dialog mat-slide-toggle button');
+    await screenshot(page, 'image-import-dialog');
+
+    const buttons = await page.$$('app-image-import-dialog mat-dialog-actions button');
+    await buttons.at(-1).click();
+    await page.waitForSelector('app-shape-details .canvas .cell');
+    assert.match(page.url(), /\/shapes\/shape_/);
+    assert.match(await page.$eval('app-shape-details input[matinput]', el => el.value), /^heart/);
+    const lit = Number((await text(page, '.canvas-bar span:nth-child(3)')).match(/\d+/)[0]);
+    assert.equal(lit, before, 'the new shape matches the preview');
+  });
+});
+
 describe('shape editor tools', () => {
   it('draws a line by dragging with the line tool, and undoes it', async () => {
     await go(page, '/shapes/new');

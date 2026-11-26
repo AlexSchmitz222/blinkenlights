@@ -6,7 +6,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { Shape } from '../../core/interfaces/shape.interface';
+import { SHAPE_MAX_SIZE, Shape } from '../../core/interfaces/shape.interface';
 import { ShapeService } from '../../core/services/shape.service';
 import { StorageService } from '../../core/services/storage.service';
 import { BasicDialogService } from '../../core/services/basic-dialog.service';
@@ -17,7 +17,6 @@ import { I18nService, TranslationKey } from '../../core/i18n/i18n.service';
 import { TranslatePipe } from '../../core/i18n/translate.pipe';
 import { shapeDeletionMessage } from '../shape-list/shape-deletion';
 
-export const SHAPE_MAX_SIZE = { width: 39, height: 21 };
 const HISTORY_LIMIT = 200;
 
 export type DrawTool = 'pencil' | 'line' | 'rect' | 'rectFilled' | 'fill';

@@ -273,6 +273,7 @@ export const en = {
     newShape: 'New shape',
     empty: 'No shapes yet.',
     drawFirst: 'Draw your first shape',
+    importImage: 'Import image',
     editShape: 'Edit {name}',
     copyName: '{name} copy',
     usedIn: 'It is used in {names}. It will disappear from that show.|It is used in {names}. It will disappear from those shows.',
@@ -309,6 +310,15 @@ export const en = {
     clearMessage: 'All pixels will be switched off.',
     nameRequired: 'Name is required',
     nameTaken: 'Another shape already uses this name',
+  },
+  imageImport: {
+    title: 'Image to shape',
+    width: 'Width',
+    threshold: 'Threshold',
+    invert: 'Invert (light parts light up)',
+    hint: 'Dark parts of the picture light up. Transparent areas stay off. You can touch up the result in the shape editor.',
+    create: 'Create shape',
+    unreadable: 'This image could not be read.',
   },
   gif: {
     title: 'Export as GIF',

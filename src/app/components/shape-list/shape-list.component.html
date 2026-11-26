@@ -3,6 +3,11 @@
     <h1>{{ 'shapes.title' | t }}</h1>
     <span class="chip">{{ items().length }}</span>
     <span class="spacer"></span>
+    <input #imageInput type="file" accept="image/*" hidden (change)="importImage(imageInput)" />
+    <button matButton (click)="imageInput.click()">
+      <mat-icon svgIcon="image-plus" />
+      {{ 'shapes.importImage' | t }}
+    </button>
     <a matButton="filled" routerLink="/shapes/new">
       <mat-icon svgIcon="plus" />
       {{ 'shapes.newShape' | t }}

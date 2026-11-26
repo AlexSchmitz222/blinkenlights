@@ -270,6 +270,7 @@ export const de: Dictionary<typeof en> = {
     newShape: 'Neue Form',
     empty: 'Noch keine Formen.',
     drawFirst: 'Erste Form zeichnen',
+    importImage: 'Bild importieren',
     editShape: '{name} bearbeiten',
     copyName: '{name} Kopie',
     usedIn: 'Sie wird in {names} verwendet und verschwindet aus dieser Show.|Sie wird in {names} verwendet und verschwindet aus diesen Shows.',
@@ -306,6 +307,15 @@ export const de: Dictionary<typeof en> = {
     clearMessage: 'Alle Pixel werden ausgeschaltet.',
     nameRequired: 'Name ist erforderlich',
     nameTaken: 'Eine andere Form hat schon diesen Namen',
+  },
+  imageImport: {
+    title: 'Bild zu Form',
+    width: 'Breite',
+    threshold: 'Schwellwert',
+    invert: 'Invertieren (helle Teile leuchten)',
+    hint: 'Dunkle Teile des Bildes leuchten. Durchsichtige Bereiche bleiben aus. Im Formen-Editor kannst du das Ergebnis nachbearbeiten.',
+    create: 'Form erstellen',
+    unreadable: 'Dieses Bild konnte nicht gelesen werden.',
   },
   gif: {
     title: 'Als GIF exportieren',
