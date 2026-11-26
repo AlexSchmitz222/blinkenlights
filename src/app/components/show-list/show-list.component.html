@@ -56,6 +56,7 @@
               </mat-menu>
               <mat-menu #exportMenu="matMenu">
                 <button mat-menu-item (click)="export(item.show)">{{ 'shows.exportJson' | t }}</button>
+                <button mat-menu-item (click)="exportGif(item.show)">{{ 'shows.exportGif' | t }}</button>
                 <button mat-menu-item (click)="exportMovie(item.show, 'blm')">{{ 'shows.exportBlm' | t }}</button>
                 <button mat-menu-item (click)="exportMovie(item.show, 'bml')">{{ 'shows.exportBml' | t }}</button>
               </mat-menu>

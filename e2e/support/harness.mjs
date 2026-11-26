@@ -9,13 +9,15 @@
  */
 import puppeteer from 'puppeteer-core';
 import { spawn, execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, statSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 export const ROOT = path.resolve(here, '../..');
 export const SCREENSHOTS = path.join(ROOT, 'e2e/screenshots');
+/** Files the app offers for download land here (no dialog). Git-ignored; old files are left in place. */
+export const DOWNLOADS = path.join(ROOT, 'e2e/downloads');
 // Inside the project (not /tmp): snap-packaged Firefox can't read /tmp. Reused between runs, git-ignored.
 const PROFILE = path.join(ROOT, 'e2e/.profile');
 const PORT = 4321;
@@ -74,6 +76,7 @@ export async function startServer() {
 export async function launchBrowser() {
   mkdirSync(PROFILE, { recursive: true });
   mkdirSync(SCREENSHOTS, { recursive: true });
+  mkdirSync(DOWNLOADS, { recursive: true });
   return puppeteer.launch({
     browser: 'firefox',
     executablePath: findFirefox(),
@@ -83,6 +86,12 @@ export async function launchBrowser() {
     extraPrefsFirefox: {
       'intl.accept_languages': 'en-US',
       'ui.systemUsesDarkTheme': 0,
+      // save downloads straight into e2e/downloads instead of asking
+      'browser.download.folderList': 2,
+      'browser.download.dir': DOWNLOADS,
+      'browser.download.useDownloadDir': true,
+      'browser.download.always_ask_before_handling_new_types': false,
+      'browser.download.alwaysOpenPanel': false,
     },
   });
 }
@@ -133,3 +142,27 @@ export async function text(page, selector) {
 }
 
 export const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+/** The files currently in DOWNLOADS; pass it to waitForDownload so only a new file counts. */
+export function existingDownloads() {
+  return new Set(readdirSync(DOWNLOADS));
+}
+
+/**
+ * Waits for a new, completely written download whose name matches `pattern` (Firefox appends "(1)",
+ * "(2)", … when a name exists already). Returns its path.
+ */
+export async function waitForDownload(pattern, known, timeout = 20_000) {
+  const deadline = Date.now() + timeout;
+  while (Date.now() < deadline) {
+    const match = readdirSync(DOWNLOADS).find(f => !known.has(f) && pattern.test(f) && !f.endsWith('.part'));
+    if (match) {
+      const file = path.join(DOWNLOADS, match);
+      const size = statSync(file).size;
+      await sleep(300);
+      if (size > 0 && statSync(file).size === size) return file; // finished writing
+    }
+    await sleep(200);
+  }
+  throw new Error(`no new download matching ${pattern} within ${timeout} ms`);
+}

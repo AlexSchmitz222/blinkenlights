@@ -31,6 +31,7 @@ import { createId } from '../../core/utils/id';
 import { I18nService, TranslationKey } from '../../core/i18n/i18n.service';
 import { TranslatePipe } from '../../core/i18n/translate.pipe';
 import * as edit from '../../core/utils/show-edit';
+import { GifExportFlow } from '../show-list/gif-export.flow';
 
 interface HistoryEntry {
   show: Show;
@@ -66,6 +67,7 @@ export class ShowEditorComponent implements HasUnsavedChanges {
   private dialog = inject(MatDialog);
   private snackBar = inject(MatSnackBar);
   private i18n = inject(I18nService);
+  private gifExport = inject(GifExportFlow);
   readonly player = inject(PlayerService);
 
   /** Route parameter `/shows/:showId`. */
@@ -812,6 +814,11 @@ export class ShowEditorComponent implements HasUnsavedChanges {
   export() {
     const show = this.show();
     if (show) this.files.exportShow(show);
+  }
+
+  exportGif() {
+    const show = this.show();
+    if (show) this.gifExport.start(show);
   }
 
   exportMovie(format: 'blm' | 'bml') {

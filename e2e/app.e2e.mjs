@@ -4,7 +4,10 @@
  */
 import { describe, it, before, after, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { startServer, launchBrowser, openPage, go, resetApp, setPreference, screenshot, text, sleep } from './support/harness.mjs';
+import { readFileSync } from 'node:fs';
+import {
+  startServer, launchBrowser, openPage, go, resetApp, setPreference, screenshot, text, sleep, existingDownloads, waitForDownload,
+} from './support/harness.mjs';
 
 let stopServer;
 let browser;
@@ -68,6 +71,39 @@ describe('shows', () => {
     const presets = await page.$$eval('app-new-show-dialog .preset .name', els => els.map(e => e.textContent.trim()));
     assert.deepEqual(presets, ['Blinkenlights', 'Arcade', 'Wide']);
     await screenshot(page, 'new-show-dialog');
+  });
+});
+
+describe('GIF export', () => {
+  it('downloads the show as an animated GIF', async () => {
+    await go(page, '/shows/show_demo_berlin');
+    // open the ⋮ show menu in the editor toolbar
+    for (const button of await page.$$('.editor-bar button')) {
+      if ((await button.evaluate(el => el.querySelector('mat-icon')?.getAttribute('svgicon'))) === 'dots-vertical') {
+        await button.click();
+        break;
+      }
+    }
+    await page.waitForSelector('.mat-mdc-menu-panel');
+    for (const item of await page.$$('.mat-mdc-menu-panel button')) {
+      if ((await item.evaluate(el => el.textContent)).includes('GIF')) {
+        await item.click();
+        break;
+      }
+    }
+    await page.waitForSelector('app-gif-export-dialog');
+    assert.match(await text(page, 'app-gif-export-dialog'), /\d+ × \d+ px/, 'shows the GIF size');
+    await screenshot(page, 'gif-export-dialog');
+
+    const known = existingDownloads();
+    const buttons = await page.$$('app-gif-export-dialog mat-dialog-actions button');
+    await buttons.at(-1).click();
+
+    const file = await waitForDownload(/^hallo-berlin.*\.gif$/, known);
+    const bytes = readFileSync(file);
+    assert.equal(bytes.subarray(0, 6).toString('latin1'), 'GIF89a');
+    const frames = bytes.filter((b, i) => b === 0x21 && bytes[i + 1] === 0xf9 && bytes[i + 2] === 0x04).length;
+    assert.ok(frames > 50, `animated (${frames} frames)`);
   });
 });
 

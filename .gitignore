@@ -43,4 +43,5 @@ Thumbs.db
 
 # UI tests (e2e): screenshots and the reusable Firefox profile
 /e2e/screenshots
+/e2e/downloads
 /e2e/.profile

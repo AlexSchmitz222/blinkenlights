@@ -66,14 +66,14 @@ export class ShowFileService {
   }
 
   exportShow(show: Show) {
-    this.download(`${slug(show.name) || 'show'}.blinken.json`, JSON.stringify(this.createShowFile(show), null, 2));
+    this.download(`${this.fileName(show)}.blinken.json`, JSON.stringify(this.createShowFile(show), null, 2));
   }
 
   /** Exports in the original Blinkenlights formats (pixels only: shapes and text are rendered). */
   exportMovie(show: Show, format: MovieFormat) {
     const resolve = (id: string) => this.storage.getShape(id);
     const content = format === 'blm' ? this.movies.toBlm(show, resolve) : this.movies.toBml(show, resolve);
-    this.download(`${slug(show.name) || 'show'}.${format}`, content, format === 'blm' ? 'text/plain' : 'application/xml');
+    this.download(`${this.fileName(show)}.${format}`, content, format === 'blm' ? 'text/plain' : 'application/xml');
   }
 
   /** Imports a BLM/BML movie as a new show. Returns null if the content isn't a movie. */
@@ -89,8 +89,13 @@ export class ShowFileService {
     this.download(`blinkenlights-backup-${date}.blinken.json`, JSON.stringify(this.createBackup(), null, 2));
   }
 
-  download(filename: string, content: string, type = 'application/json') {
-    const url = URL.createObjectURL(new Blob([content], { type }));
+  /** A file-system friendly base name for a show, e.g. "Hallo Berlin!" → "hallo-berlin". */
+  fileName(show: Show): string {
+    return slug(show.name) || 'show';
+  }
+
+  download(filename: string, content: string | Uint8Array, type = 'application/json') {
+    const url = URL.createObjectURL(new Blob([content as BlobPart], { type }));
     const a = this.document.createElement('a');
     a.href = url;
     a.download = filename;

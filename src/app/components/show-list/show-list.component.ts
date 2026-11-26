@@ -14,6 +14,7 @@ import { BasicDialogService } from '../../core/services/basic-dialog.service';
 import { InvalidFileError, ShowFileService } from '../../core/services/show-file.service';
 import { PixelGridComponent } from '../../shared/pixel-grid/pixel-grid.component';
 import { NewShowDialogComponent, NewShowResult } from './new-show-dialog.component';
+import { GifExportFlow } from './gif-export.flow';
 import { createId } from '../../core/utils/id';
 import { I18nService } from '../../core/i18n/i18n.service';
 import { TranslatePipe } from '../../core/i18n/translate.pipe';
@@ -34,6 +35,7 @@ export class ShowListComponent {
   private snackBar = inject(MatSnackBar);
   private router = inject(Router);
   private i18n = inject(I18nService);
+  private gifExport = inject(GifExportFlow);
 
   readonly items = computed(() =>
     [...this.storage.shows()]
@@ -85,6 +87,10 @@ export class ShowListComponent {
 
   export(show: Show) {
     this.files.exportShow(show);
+  }
+
+  exportGif(show: Show) {
+    this.gifExport.start(show);
   }
 
   exportMovie(show: Show, format: 'blm' | 'bml') {
