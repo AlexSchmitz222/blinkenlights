@@ -50,3 +50,9 @@
 <main [class.with-chrome]="showChrome()">
   <router-outlet />
 </main>
+@if (version.reloadAvailable()) {
+  <div class="update-banner" role="status">
+    <span>{{ 'build.updateAvailable' | t }}</span>
+    <button matButton="filled" (click)="version.reload()">{{ 'build.reload' | t }}</button>
+  </div>
+}

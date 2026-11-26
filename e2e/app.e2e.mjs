@@ -4,7 +4,7 @@
  */
 import { describe, it, before, after, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import {
   startServer, launchBrowser, openPage, go, resetApp, setPreference, screenshot, text, sleep, existingDownloads, waitForDownload, waitForMenu, appPath, collectErrors, BASE_PATH,
@@ -86,6 +86,35 @@ describe('build information', () => {
     } else {
       assert.match(footer, /Development build/);
     }
+  });
+});
+
+describe('update notice', () => {
+  it('offers a reload when a newer version is deployed than the one running', async t => {
+    if (!BASE_PATH) {
+      t.skip('needs the GitHub Pages build with version.json (npm run test:ui:pages)');
+      return;
+    }
+    const file = new URL('../dist/blinkenlights/browser/version.json', import.meta.url);
+    const original = readFileSync(file, 'utf8');
+
+    await go(page, '/');
+    await sleep(500);
+    assert.equal(await page.$('.update-banner'), null, 'no notice while the newest version runs');
+
+    try {
+      // a deployment happens while the page is open: version.json now names another commit
+      writeFileSync(file, JSON.stringify({ ...JSON.parse(original), commit: 'f'.repeat(40) }));
+      await go(page, '/shows');
+      await page.waitForSelector('.update-banner');
+      assert.match(await text(page, '.update-banner'), /newer version/);
+      await screenshot(page, 'update-banner');
+    } finally {
+      writeFileSync(file, original);
+    }
+    await page.click('.update-banner button');
+    await sleep(800);
+    assert.equal(await page.$('.update-banner'), null, 'after reloading the notice is gone');
   });
 });
 

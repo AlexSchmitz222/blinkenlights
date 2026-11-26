@@ -298,6 +298,12 @@ export const en = {
     localChanges: '+ local changes',
     builtAt: 'built {date}',
     dev: 'Development build',
+    current: '✓ up to date',
+    behind: '{count} newer commit on GitHub, not published yet|{count} newer commits on GitHub, not published yet',
+    ahead: 'newer than GitHub (local build)',
+    unknown: 'not on GitHub (local build)',
+    updateAvailable: 'A newer version of the app is available.',
+    reload: 'Reload',
   },
   shapeEditor: {
     draw: 'Draw',

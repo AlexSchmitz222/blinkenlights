@@ -295,6 +295,12 @@ export const de: Dictionary<typeof en> = {
     localChanges: '+ lokale Änderungen',
     builtAt: 'gebaut am {date}',
     dev: 'Entwicklungsversion',
+    current: '✓ aktuell',
+    behind: '{count} neuerer Commit auf GitHub, noch nicht veröffentlicht|{count} neuere Commits auf GitHub, noch nicht veröffentlicht',
+    ahead: 'neuer als GitHub (lokaler Build)',
+    unknown: 'nicht auf GitHub (lokaler Build)',
+    updateAvailable: 'Es gibt eine neuere Version der App.',
+    reload: 'Neu laden',
   },
   shapeEditor: {
     draw: 'Zeichnen',

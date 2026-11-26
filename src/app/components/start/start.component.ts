@@ -12,6 +12,7 @@ import { readPreference } from '../../core/utils/preferences';
 import { TranslatePipe } from '../../core/i18n/translate.pipe';
 import { I18nService } from '../../core/i18n/i18n.service';
 import { BuildInfo, REPOSITORY_URL, buildInfo } from '../../core/build-info';
+import { VersionService } from '../../core/services/version.service';
 
 @Component({
   selector: 'app-start',
@@ -46,6 +47,24 @@ import { BuildInfo, REPOSITORY_URL, buildInfo } from '../../core/build-info';
         </span>
         <span>·</span>
         <span>{{ 'build.builtAt' | t: { date: builtAt() } }}</span>
+        @switch (version.github().state) {
+          @case ('current') {
+            <span>·</span>
+            <span class="ok">{{ 'build.current' | t }}</span>
+          }
+          @case ('behind') {
+            <span>·</span>
+            <a class="stale" [href]="repositoryUrl + '/commits/main'" target="_blank" rel="noopener">{{ 'build.behind' | t: { count: behindCount() } }}</a>
+          }
+          @case ('ahead') {
+            <span>·</span>
+            <span>{{ 'build.ahead' | t }}</span>
+          }
+          @case ('unknown') {
+            <span>·</span>
+            <span>{{ 'build.unknown' | t }}</span>
+          }
+        }
       } @else {
         <span>{{ 'build.dev' | t }}</span>
       }
@@ -88,8 +107,12 @@ import { BuildInfo, REPOSITORY_URL, buildInfo } from '../../core/build-info';
       color: inherit;
       text-decoration: underline dotted;
     }
-    .dirty {
+    .dirty,
+    .stale {
       color: var(--bl-accent);
+    }
+    .ok {
+      color: light-dark(#2e7d32, #81c784);
     }
     .actions {
       display: flex;
@@ -115,6 +138,12 @@ export class StartComponent {
 
   /** Which build is running (commit, time), so you can tell whether a deployment is up to date. */
   readonly build: BuildInfo | null = buildInfo;
+  readonly version = inject(VersionService);
+  readonly repositoryUrl = REPOSITORY_URL;
+  readonly behindCount = computed(() => {
+    const status = this.version.github();
+    return status.state === 'behind' ? status.count : 0;
+  });
   readonly commitUrl = buildInfo ? `${REPOSITORY_URL}/commit/${buildInfo.commit}` : '';
   readonly builtAt = computed(() =>
     this.build

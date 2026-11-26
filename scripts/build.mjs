@@ -2,12 +2,14 @@
 /**
  * Production build with build information baked in (shown on the start page):
  * commit, commit subject, build time and whether there were uncommitted changes.
+ * Also writes version.json next to the app, which the app checks to offer a reload when a newer
+ * version has been deployed.
  *
  *   node scripts/build.mjs          → dist/ for serving at /
  *   node scripts/build.mjs --pages  → dist/ for GitHub Pages (/blinkenlights/) + 404.html for direct links
  */
 import { execFileSync, spawnSync } from 'node:child_process';
-import { copyFileSync } from 'node:fs';
+import { copyFileSync, writeFileSync } from 'node:fs';
 
 const pages = process.argv.includes('--pages');
 
@@ -35,6 +37,10 @@ if (pages) args.push('--base-href', '/blinkenlights/');
 console.log(`Building ${info.commit.slice(0, 7) || '(no git)'}${info.dirty ? ' + local changes' : ''}${pages ? ' for GitHub Pages' : ''}`);
 const result = spawnSync('npx', args, { stdio: 'inherit' });
 if (result.status !== 0) process.exit(result.status ?? 1);
+
+// Next to the app: the browser fetches it (uncached) to notice when a newer version was deployed
+// than the one it is running, e.g. from its cache.
+writeFileSync('dist/blinkenlights/browser/version.json', JSON.stringify({ commit: info.commit, builtAt: info.builtAt }) + '\n');
 
 if (pages) {
   // GitHub Pages has no app routes: serve the app for every unknown path

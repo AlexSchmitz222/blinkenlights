@@ -81,3 +81,22 @@ main {
     display: none;
   }
 }
+
+// "a newer version is available" — fixed at the bottom, above everything (also the player)
+.update-banner {
+  position: fixed;
+  left: 50%;
+  bottom: 16px;
+  transform: translateX(-50%);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: calc(100vw - 32px);
+  padding: 8px 8px 8px 16px;
+  background: var(--bl-surface);
+  border: 1px solid var(--bl-border-strong);
+  border-radius: var(--bl-radius);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18);
+  font-size: 13px;
+}

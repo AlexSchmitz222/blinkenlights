@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, inject, computed } from '@angular/core';
+import { Component, ChangeDetectionStrategy, DestroyRef, inject, computed } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { filter, map } from 'rxjs';
@@ -7,6 +7,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ThemeMode, ThemeService } from './core/theme/theme.service';
+import { VersionService } from './core/services/version.service';
 import { LogoComponent } from './shared/logo/logo.component';
 import { I18nService, LANGUAGES, TranslationKey } from './core/i18n/i18n.service';
 import { TranslatePipe } from './core/i18n/translate.pipe';
@@ -23,6 +24,7 @@ export class AppComponent {
   private route = inject(ActivatedRoute);
   readonly theme = inject(ThemeService);
   readonly i18n = inject(I18nService);
+  readonly version = inject(VersionService);
   readonly languages = LANGUAGES;
 
   readonly themeOptions: { mode: ThemeMode; label: TranslationKey; icon: string }[] = [
@@ -30,6 +32,11 @@ export class AppComponent {
     { mode: 'light', label: 'theme.light', icon: 'white-balance-sunny' },
     { mode: 'dark', label: 'theme.dark', icon: 'weather-night' },
   ];
+
+  constructor() {
+    // is a newer version deployed than the one this browser runs? (offers a reload)
+    this.version.start(inject(DestroyRef));
+  }
 
   readonly themeIcon = computed(() => this.themeOptions.find(o => o.mode === this.theme.mode())!.icon);
 

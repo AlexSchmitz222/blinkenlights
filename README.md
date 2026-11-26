@@ -87,6 +87,8 @@ npm run build      # production build into dist/blinkenlights
 
 `.github/workflows/pages.yml` builds the app, runs the unit tests and publishes it on every push to `main`. You can also start it by hand under *Actions*. The app then runs at **https://alexschmitz222.github.io/blinkenlights/**.
 
+**Is it up to date?** The start page shows which build is running (commit and build time, linked to the commit). On the published site it also asks GitHub whether that is the newest commit on `main`: it then shows "✓ up to date" or "N newer commits on GitHub, not published yet", the latter meaning the deployment is still running or failed. If your browser runs an older, cached version than the one deployed, a notice offers to reload. For that, every build writes a `version.json` next to the app.
+
 One-time setup: in the repository open *Settings → Pages → Build and deployment* and set *Source* to **GitHub Actions**. For a private repository, GitHub Pages needs a paid plan.
 
 ```bash
