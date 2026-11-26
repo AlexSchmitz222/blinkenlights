@@ -15,6 +15,7 @@ import { InvalidFileError, ShowFileService } from '../../core/services/show-file
 import { PixelGridComponent } from '../../shared/pixel-grid/pixel-grid.component';
 import { NewShowDialogComponent, NewShowResult } from './new-show-dialog.component';
 import { GifExportFlow } from './gif-export.flow';
+import { ShareDialogComponent, ShareDialogData } from './share-dialog.component';
 import { createId } from '../../core/utils/id';
 import { I18nService } from '../../core/i18n/i18n.service';
 import { TranslatePipe } from '../../core/i18n/translate.pipe';
@@ -87,6 +88,10 @@ export class ShowListComponent {
 
   export(show: Show) {
     this.files.exportShow(show);
+  }
+
+  share(show: Show) {
+    this.dialog.open<ShareDialogComponent, ShareDialogData>(ShareDialogComponent, { data: { show }, width: '560px', maxWidth: '94vw' });
   }
 
   exportGif(show: Show) {

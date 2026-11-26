@@ -117,9 +117,18 @@ export async function openPage(browser, viewport = { width: 1366, height: 860 })
   return { page, errors };
 }
 
-/** Goes to a route and waits until the app has settled. */
-export async function go(page, route) {
-  await page.goto(BASE + route, { waitUntil: 'networkidle0' });
+/**
+ * Goes to a route (or a full URL) and waits until the app has rendered the page.
+ *
+ * Deliberately not `networkidle0`: Firefox loads favicons through a separate channel that WebDriver
+ * BiDi doesn't always report as finished, so "no open requests" can wait forever.
+ */
+export async function go(page, routeOrUrl) {
+  const url = /^https?:/.test(routeOrUrl) ? routeOrUrl : BASE + routeOrUrl;
+  await page.goto(url, { waitUntil: 'load' });
+  // the routed page sits right after <router-outlet>; lazy pages need a moment to load their chunk
+  await page.waitForFunction(() => !!document.querySelector('main router-outlet')?.nextElementSibling, { timeout: 15_000 });
+  await sleep(150); // let first effects (seeding, autoplay) run
 }
 
 /** Wipes the app's saved data so the next page load behaves like a first visit (demo data is seeded). */
@@ -142,6 +151,19 @@ export async function text(page, selector) {
 }
 
 export const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+/**
+ * Waits until a menu has opened completely. Clicking an item while the menu still animates open
+ * can miss it.
+ */
+export async function waitForMenu(page) {
+  await page.waitForSelector('.mat-mdc-menu-panel');
+  await page.waitForFunction(() => {
+    const panel = document.querySelector('.mat-mdc-menu-panel');
+    return !!panel && panel.getAnimations({ subtree: true }).every(a => a.playState !== 'running') && getComputedStyle(panel).opacity === '1';
+  });
+  await sleep(50);
+}
 
 /** The files currently in DOWNLOADS; pass it to waitForDownload so only a new file counts. */
 export function existingDownloads() {

@@ -50,6 +50,7 @@
               <mat-menu #menu="matMenu" xPosition="before">
                 <a mat-menu-item [routerLink]="['/play', item.show.id]"><mat-icon svgIcon="play" />{{ 'common.play' | t }}</a>
                 <a mat-menu-item [routerLink]="['/shows', item.show.id]"><mat-icon svgIcon="pencil" />{{ 'common.edit' | t }}</a>
+                <button mat-menu-item (click)="share(item.show)"><mat-icon svgIcon="share-variant" />{{ 'shows.share' | t }}</button>
                 <button mat-menu-item (click)="duplicate(item.show)"><mat-icon svgIcon="content-duplicate" />{{ 'common.duplicate' | t }}</button>
                 <button mat-menu-item [matMenuTriggerFor]="exportMenu"><mat-icon svgIcon="download" />{{ 'shows.export' | t }}</button>
                 <button mat-menu-item (click)="delete(item.show)"><mat-icon svgIcon="delete" />{{ 'common.delete' | t }}</button>

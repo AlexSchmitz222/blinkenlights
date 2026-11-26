@@ -21,6 +21,7 @@ You can use this app to draw pixel shapes, arrange them into frames and scenes, 
   - a small 3×5 font with capitals only, which fits 4 instead of 3 characters on that building.
 - **Player**: a fullscreen player with a house-front view, looping, frame stepping, speeds from 0.25× to 2×, and controls that hide while the show plays.
 - **Grid presets**: Blinkenlights (18×8, Berlin 2001), Arcade (26×20, Paris 2002) and Wide (39×21).
+- **Sharing**: a link that contains the whole show, compressed, behind the `#`. That part of the address is never sent to a server, so no backend is needed. Whoever opens the link watches the show on the house front and can add it to their own shows. Shapes come along and never overwrite existing ones. You can also share the link or a GIF through the system share sheet. The link works for others once the app is online.
 - **Animated GIF export**: in the house-front or the pixel look, in three sizes. A GIF can be shared anywhere, also with people who don't have the app.
 - **Import/export**:
   - `.blinken.json` files: a single show together with the shapes it uses, or a full backup.

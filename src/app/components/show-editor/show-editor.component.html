@@ -27,6 +27,7 @@
       <mat-menu #showMenu="matMenu" xPosition="before">
         <a mat-menu-item [routerLink]="['/play', show.id]" [queryParams]="{ returnTo: editorUrl() }"><mat-icon svgIcon="fullscreen" />{{ 'editor.openInPlayer' | t }}</a>
         <button mat-menu-item (click)="export()"><mat-icon svgIcon="download" />{{ 'editor.exportJson' | t }}</button>
+        <button mat-menu-item (click)="share()"><mat-icon svgIcon="share-variant" />{{ 'shows.share' | t }}</button>
         <button mat-menu-item (click)="exportGif()"><mat-icon svgIcon="file-gif-box" />{{ 'editor.exportGif' | t }}</button>
         <button mat-menu-item (click)="exportMovie('blm')"><mat-icon svgIcon="download" />{{ 'editor.exportBlm' | t }}</button>
         <button mat-menu-item (click)="exportMovie('bml')"><mat-icon svgIcon="download" />{{ 'editor.exportBml' | t }}</button>

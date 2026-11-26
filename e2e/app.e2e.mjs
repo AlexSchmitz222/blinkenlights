@@ -6,7 +6,7 @@ import { describe, it, before, after, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import {
-  startServer, launchBrowser, openPage, go, resetApp, setPreference, screenshot, text, sleep, existingDownloads, waitForDownload,
+  startServer, launchBrowser, openPage, go, resetApp, setPreference, screenshot, text, sleep, existingDownloads, waitForDownload, waitForMenu,
 } from './support/harness.mjs';
 
 let stopServer;
@@ -74,6 +74,68 @@ describe('shows', () => {
   });
 });
 
+describe('sharing', () => {
+  it('shares a show as a link that someone else can open and keep', async () => {
+    // Person A: a show of their own, with a shape of their own
+    await go(page, '/shows'); // first visit after the reset seeds the app's data
+    await page.evaluate(() => {
+      const data = JSON.parse(localStorage.getItem('blinkenlights.data'));
+      data.shapes.push({ id: 'shape_mine', name: 'Mine', description: '', size: { width: 2, height: 2 }, inverted: false,
+        pattern: [{ position: { x: 0, y: 0 }, active: true }, { position: { x: 1, y: 1 }, active: true }] });
+      data.shows.push({ id: 'show_mine', name: 'My shared show', description: 'for the test', size: { width: 18, height: 8 }, loop: true,
+        scenes: [{ id: 'sc', name: 'S', frames: [{ id: 'f', duration: 300, objects: [
+          { id: 'o', type: 'shape', shapeId: 'shape_mine', position: { x: 3, y: 3 } },
+          { id: 't', type: 'text', text: 'HI', position: { x: 8, y: 0 } },
+        ] }] }] });
+      localStorage.setItem('blinkenlights.data', JSON.stringify(data));
+    });
+    await go(page, '/shows');
+    const cards = await page.$$('.card');
+    for (const card of cards) {
+      if ((await card.$eval('.name', el => el.textContent.trim())) === 'My shared show') {
+        await (await card.$('.title-row button[aria-haspopup]')).click();
+        break;
+      }
+    }
+    await waitForMenu(page);
+    for (const item of await page.$$('.mat-mdc-menu-panel button')) {
+      if ((await item.evaluate(el => el.textContent)).includes('Share')) {
+        await item.click();
+        break;
+      }
+    }
+    await page.waitForFunction(() => document.querySelector('app-share-dialog input.link')?.value.includes('/share#b1.'));
+    const link = await page.$eval('app-share-dialog input.link', el => el.value);
+    assert.match(await text(page, 'app-share-dialog'), /only runs on this computer/, 'warns that the app is local');
+    await screenshot(page, 'share-dialog');
+    await page.keyboard.press('Escape');
+
+    // Person B: an empty browser opens the link
+    await page.evaluate(() => localStorage.clear());
+    await go(page, link);
+    await page.waitForSelector('app-share-view app-pixel-grid .cell.on');
+    assert.equal(await text(page, 'app-share-view h1'), 'My shared show');
+    const lit = await page.$$eval('app-share-view .cell.on', cells => cells.length);
+    assert.ok(lit > 2, `the shape and the text from the link are drawn (${lit} lit)`);
+    await screenshot(page, 'share-view');
+
+    await page.click('app-share-view .head button[matbutton="filled"]');
+    await sleep(300);
+    await go(page, '/shows');
+    const names = await page.$$eval('.card .name', els => els.map(e => e.textContent.trim()));
+    assert.ok(names.includes('My shared show'), 'the show was added');
+    await go(page, '/shapes');
+    const shapes = await page.$$eval('.card .name', els => els.map(e => e.textContent.trim()));
+    assert.ok(shapes.includes('Mine'), 'the shape came along');
+  });
+
+  it('explains a broken link instead of failing', async () => {
+    await go(page, '/share#b1.broken');
+    await page.waitForSelector('app-share-view .empty-state');
+    assert.match(await text(page, 'app-share-view .empty-state'), /broken or incomplete/);
+  });
+});
+
 describe('GIF export', () => {
   it('downloads the show as an animated GIF', async () => {
     await go(page, '/shows/show_demo_berlin');
@@ -84,7 +146,7 @@ describe('GIF export', () => {
         break;
       }
     }
-    await page.waitForSelector('.mat-mdc-menu-panel');
+    await waitForMenu(page);
     for (const item of await page.$$('.mat-mdc-menu-panel button')) {
       if ((await item.evaluate(el => el.textContent)).includes('GIF')) {
         await item.click();
@@ -230,7 +292,7 @@ describe('show editor', () => {
   it('opens the frame context menu with shortcut hints on one line', async () => {
     const frames = await page.$$('.timeline .frame');
     await frames[1].click({ button: 'right' });
-    await page.waitForSelector('.mat-mdc-menu-panel');
+    await waitForMenu(page);
     const hints = await page.$$eval('.mat-mdc-menu-panel .kbd-hint', els =>
       els.map(e => {
         const hint = e.getBoundingClientRect();
@@ -301,7 +363,7 @@ describe('back buttons', () => {
         break;
       }
     }
-    await page.waitForSelector('.mat-mdc-menu-panel');
+    await waitForMenu(page);
     await page.click('.mat-mdc-menu-panel a[href^="/play/"]');
     await page.waitForSelector('app-player .bar');
     await page.mouse.move(400, 830); // controls appear on pointer movement
@@ -420,7 +482,7 @@ describe('icons', () => {
 
     const frames = await page.$$('.timeline .frame');
     await frames[1].click({ button: 'right' });
-    await page.waitForSelector('.mat-mdc-menu-panel');
+    await waitForMenu(page);
     assert.deepEqual(await page.evaluate(misaligned), [], 'frame context menu');
   });
 });

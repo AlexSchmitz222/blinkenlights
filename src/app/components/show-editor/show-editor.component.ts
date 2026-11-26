@@ -32,6 +32,7 @@ import { I18nService, TranslationKey } from '../../core/i18n/i18n.service';
 import { TranslatePipe } from '../../core/i18n/translate.pipe';
 import * as edit from '../../core/utils/show-edit';
 import { GifExportFlow } from '../show-list/gif-export.flow';
+import { ShareDialogComponent, ShareDialogData } from '../show-list/share-dialog.component';
 import { ClipboardService } from '../../core/services/clipboard.service';
 import { DraftService } from '../../core/services/draft.service';
 import { safeReturnUrl } from '../../core/utils/return-to';
@@ -939,6 +940,12 @@ export class ShowEditorComponent implements HasUnsavedChanges {
   export() {
     const show = this.show();
     if (show) this.files.exportShow(show);
+  }
+
+  /** Shares the show as it is in the editor right now (also unsaved changes). */
+  share() {
+    const show = this.show();
+    if (show) this.dialog.open<ShareDialogComponent, ShareDialogData>(ShareDialogComponent, { data: { show }, width: '560px', maxWidth: '94vw' });
   }
 
   exportGif() {

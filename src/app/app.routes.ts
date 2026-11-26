@@ -20,6 +20,11 @@ export const routes: Routes = [
     loadComponent: () => import('./components/show-editor/show-editor.component').then(m => m.ShowEditorComponent),
   },
   {
+    path: 'share',
+    title: 'titles.share',
+    loadComponent: () => import('./components/share/share-view.component').then(m => m.ShareViewComponent),
+  },
+  {
     path: 'play/:showId',
     title: 'titles.player',
     data: { chrome: false },
