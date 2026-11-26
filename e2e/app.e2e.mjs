@@ -5,8 +5,9 @@
 import { describe, it, before, after, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
 import {
-  startServer, launchBrowser, openPage, go, resetApp, setPreference, screenshot, text, sleep, existingDownloads, waitForDownload, waitForMenu, appPath, collectErrors,
+  startServer, launchBrowser, openPage, go, resetApp, setPreference, screenshot, text, sleep, existingDownloads, waitForDownload, waitForMenu, appPath, collectErrors, BASE_PATH,
 } from './support/harness.mjs';
 
 let stopServer;
@@ -68,6 +69,23 @@ describe('start page', () => {
     await sleep(600);
     assert.notEqual(await lit(), first, 'the house front animates');
     await screenshot(page, 'start');
+  });
+});
+
+describe('build information', () => {
+  it('shows which build is running', async () => {
+    await go(page, '/');
+    const footer = await text(page, 'footer.build');
+    if (BASE_PATH) {
+      // the GitHub Pages build (npm run test:ui:pages) names the commit it was built from
+      const commit = execFileSync('git', ['rev-parse', '--short=7', 'HEAD'], { encoding: 'utf8' }).trim();
+      assert.match(footer, new RegExp(`Version ${commit}`));
+      assert.match(footer, /built /);
+      const href = await page.$eval('footer.build a', a => a.href);
+      assert.match(href, /github\.com\/AlexSchmitz222\/blinkenlights\/commit\/[0-9a-f]{40}$/);
+    } else {
+      assert.match(footer, /Development build/);
+    }
   });
 });
 

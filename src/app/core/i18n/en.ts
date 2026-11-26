@@ -293,6 +293,12 @@ export const en = {
     usedIn: 'It is used in {names}. It will disappear from that show.|It is used in {names}. It will disappear from those shows.',
     andMore: '{names} and {count} more',
   },
+  build: {
+    version: 'Version',
+    localChanges: '+ local changes',
+    builtAt: 'built {date}',
+    dev: 'Development build',
+  },
   shapeEditor: {
     draw: 'Draw',
     toolPencil: 'Pencil',

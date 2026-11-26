@@ -290,6 +290,12 @@ export const de: Dictionary<typeof en> = {
     usedIn: 'Sie wird in {names} verwendet und verschwindet aus dieser Show.|Sie wird in {names} verwendet und verschwindet aus diesen Shows.',
     andMore: '{names} und {count} weiteren',
   },
+  build: {
+    version: 'Version',
+    localChanges: '+ lokale Änderungen',
+    builtAt: 'gebaut am {date}',
+    dev: 'Entwicklungsversion',
+  },
   shapeEditor: {
     draw: 'Zeichnen',
     toolPencil: 'Stift',

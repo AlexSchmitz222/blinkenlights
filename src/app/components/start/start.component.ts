@@ -10,6 +10,8 @@ import { StorageService } from '../../core/services/storage.service';
 import { GRID_PRESETS, Show } from '../../core/interfaces/show.interface';
 import { readPreference } from '../../core/utils/preferences';
 import { TranslatePipe } from '../../core/i18n/translate.pipe';
+import { I18nService } from '../../core/i18n/i18n.service';
+import { BuildInfo, REPOSITORY_URL, buildInfo } from '../../core/build-info';
 
 @Component({
   selector: 'app-start',
@@ -33,6 +35,21 @@ import { TranslatePipe } from '../../core/i18n/translate.pipe';
         </div>
       </div>
     </section>
+    <footer class="build muted">
+      @if (build; as build) {
+        <span>
+          {{ 'build.version' | t }}
+          <a [href]="commitUrl" target="_blank" rel="noopener" [title]="build.subject">{{ build.commit.slice(0, 7) }}</a>
+          @if (build.dirty) {
+            <span class="dirty">{{ 'build.localChanges' | t }}</span>
+          }
+        </span>
+        <span>·</span>
+        <span>{{ 'build.builtAt' | t: { date: builtAt() } }}</span>
+      } @else {
+        <span>{{ 'build.dev' | t }}</span>
+      }
+    </footer>
   `,
   styles: `
     .hero {
@@ -59,6 +76,21 @@ import { TranslatePipe } from '../../core/i18n/translate.pipe';
     p {
       margin: 0;
     }
+    .build {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 6px;
+      padding: 32px 16px 24px;
+      font-size: 11px;
+    }
+    .build a {
+      color: inherit;
+      text-decoration: underline dotted;
+    }
+    .dirty {
+      color: var(--bl-accent);
+    }
     .actions {
       display: flex;
       gap: 12px;
@@ -79,6 +111,16 @@ export class StartComponent {
   private render = inject(RenderService);
   private storage = inject(StorageService);
   private size = GRID_PRESETS[0].size;
+  private i18n = inject(I18nService);
+
+  /** Which build is running (commit, time), so you can tell whether a deployment is up to date. */
+  readonly build: BuildInfo | null = buildInfo;
+  readonly commitUrl = buildInfo ? `${REPOSITORY_URL}/commit/${buildInfo.commit}` : '';
+  readonly builtAt = computed(() =>
+    this.build
+      ? new Intl.DateTimeFormat(this.i18n.locale(), { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(this.build.builtAt))
+      : '',
+  );
 
   readonly lastShow = computed(() => {
     const id = readPreference<string>('lastShow', this.storage.shows().map(s => s.id), '');

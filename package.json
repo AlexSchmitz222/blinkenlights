@@ -4,11 +4,11 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
-    "build": "ng build",
+    "build": "node scripts/build.mjs",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "test:ui": "node --test --test-concurrency=1 \"e2e/**/*.e2e.mjs\"",
-    "build:pages": "ng build --base-href /blinkenlights/ && node -e \"require('fs').copyFileSync('dist/blinkenlights/browser/index.html','dist/blinkenlights/browser/404.html')\"",
+    "build:pages": "node scripts/build.mjs --pages",
     "test:ui:pages": "npm run build:pages && node e2e/support/run-pages.mjs"
   },
   "private": true,
