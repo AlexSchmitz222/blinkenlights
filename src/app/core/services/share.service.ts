@@ -2,12 +2,17 @@ import { DOCUMENT, Injectable, inject } from '@angular/core';
 import { Show } from '../interfaces/show.interface';
 import { ShowFile, ShowFileService } from './show-file.service';
 import { InvalidFileError } from '../errors/InvalidFile.error';
+import { fromCompact, toCompact } from '../utils/compact-show';
 
-/** Links longer than this may get cut off by some messengers and mail programs. */
-export const LONG_LINK = 8000;
+/** Discord's message limit; several other chat apps cut long links around this length too. */
+export const LONG_LINK = 2000;
 
-/** Version prefix of the link data, so the format can change later without breaking old links. */
-const PREFIX = 'b1.';
+/**
+ * Version prefix of the link data, so the format can change without breaking old links.
+ * b2: compact arrays without ids (see compact-show.ts); b1: the plain show file (still readable).
+ */
+const PREFIX = 'b2.';
+const LEGACY_PREFIX = 'b1.';
 
 /**
  * Share links that contain the whole show (with its shapes), compressed, in the URL fragment:
@@ -22,20 +27,28 @@ export class ShareService {
   /** Builds the link for a show (as currently edited, saved or not). */
   async createLink(show: Show): Promise<string> {
     const file = this.files.createShowFile(show);
-    const data = await encode(JSON.stringify(file));
+    // pixels written plainly or packed: whichever compresses better for this show
+    const [plain, packed] = await Promise.all([encode(JSON.stringify(toCompact(file))), encode(JSON.stringify(toCompact(file, true)))]);
+    const data = packed.length < plain.length ? packed : plain;
     return new URL(`share#${PREFIX}${data}`, this.document.baseURI).href;
   }
 
   /** Reads the show from a link's fragment (with or without the leading '#'). */
   async readFragment(fragment: string): Promise<ShowFile> {
     const raw = fragment.replace(/^#/, '');
-    if (!raw.startsWith(PREFIX)) throw new InvalidFileError('share.invalidLink');
     let json: string;
     try {
-      json = await decode(raw.slice(PREFIX.length));
+      if (raw.startsWith(PREFIX)) {
+        json = JSON.stringify(fromCompact(JSON.parse(await decode(raw.slice(PREFIX.length)))));
+      } else if (raw.startsWith(LEGACY_PREFIX)) {
+        json = await decode(raw.slice(LEGACY_PREFIX.length));
+      } else {
+        throw new Error('unknown link format');
+      }
     } catch {
       throw new InvalidFileError('share.invalidLink');
     }
+    // the same checks as for imported files
     const file = this.files.parse(json);
     if (file.format !== 'blinkenlights-show') throw new InvalidFileError('share.invalidLink');
     return file;

@@ -651,11 +651,12 @@ export class ShowEditorComponent implements HasUnsavedChanges {
       case 'shape': return this.resolveShape(object.shapeId)?.name ?? this.i18n.t('editor.missingShape');
       case 'text': return `“${object.text}”`;
       case 'bitmap': return this.i18n.t('editor.bitmapLabel', { width: object.size.width, height: object.size.height });
+      case 'sparkle': return this.i18n.t('editor.sparkleLabel', { percent: Math.round(object.density * 100) });
     }
   }
 
   objectIcon(object: FrameObject): string {
-    return { shape: 'shape-outline', text: 'format-text', bitmap: 'grid' }[object.type];
+    return { shape: 'shape-outline', text: 'format-text', bitmap: 'grid', sparkle: 'creation' }[object.type];
   }
 
   objectTypeLabel(object: FrameObject): TranslationKey {

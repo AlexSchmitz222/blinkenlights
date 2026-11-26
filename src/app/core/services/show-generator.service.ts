@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { Grid, Position, Size } from '../interfaces/grid.interface';
-import { BitmapObject, Frame, FrameObject, TextObject } from '../interfaces/frame.interface';
+import { Frame, FrameObject, SparkleObject, TextObject } from '../interfaces/frame.interface';
+import { randomSeed } from '../utils/random';
 import { TextDrawService } from './text-draw.service';
 import { createId } from '../utils/id';
 
@@ -133,20 +134,12 @@ export class ShowGeneratorService {
   sparkle(gridSize: Size, options: SparkleOptions = {}): Frame[] {
     const count = Math.max(1, Math.round(options.frames ?? 12));
     const density = Math.min(1, Math.max(0, options.density ?? 0.08));
-    const random = seededRandom(options.seed ?? Date.now());
+    const seed = options.seed ?? randomSeed();
+    const objectId = createId('obj'); // one overlay that changes, not a new object per frame
     const frames: Frame[] = [];
     for (let f = 0; f < count; f++) {
-      const rows = Array.from({ length: gridSize.height }, () =>
-        Array.from({ length: gridSize.width }, () => (random() < density ? '1' : '0')).join(''),
-      );
-      const sparkles: BitmapObject = {
-        id: createId('obj'),
-        type: 'bitmap',
-        position: { x: 0, y: 0 },
-        size: { ...gridSize },
-        rows,
-        transparent: true,
-      };
+      // a recipe, not pixels: tiny to store and share, and every device draws the same lights
+      const sparkles: SparkleObject = { id: objectId, type: 'sparkle', position: { x: 0, y: 0 }, density, seed: seed + f };
       frames.push({
         id: createId('frame'),
         duration: options.stepDuration ?? 100,
@@ -166,6 +159,7 @@ export class ShowGeneratorService {
     const horizontal = direction === 'left' || direction === 'right';
     const steps = horizontal ? width : height;
     const frames: Frame[] = [];
+    const objectId = createId('obj'); // one picture that changes, not a new object per frame
     for (let k = 1; k < steps; k++) {
       const rows: string[] = [];
       for (let y = 0; y < height; y++) {
@@ -181,7 +175,7 @@ export class ShowGeneratorService {
       frames.push({
         id: createId('frame'),
         duration: options.stepDuration ?? 40,
-        objects: [{ id: createId('obj'), type: 'bitmap', position: { x: 0, y: 0 }, size: { width, height }, rows }],
+        objects: [{ id: objectId, type: 'bitmap', position: { x: 0, y: 0 }, size: { width, height }, rows }],
       });
     }
     return frames;
@@ -215,14 +209,3 @@ export interface WipeOptions {
   stepDuration?: number;
 }
 
-/** Small, fast, seedable pseudo-random generator (mulberry32). */
-function seededRandom(seed: number): () => number {
-  let a = seed >>> 0;
-  return () => {
-    a = (a + 0x6d2b79f5) >>> 0;
-    let t = a;
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}

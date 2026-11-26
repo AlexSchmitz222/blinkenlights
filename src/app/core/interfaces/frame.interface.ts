@@ -36,7 +36,18 @@ export interface BitmapObject extends FrameObjectBase {
     transparent?: boolean;
 }
 
-export type FrameObject = ShapeObject | TextObject | BitmapObject;
+/**
+ * Random lights over the whole grid, stored as a recipe instead of pixels: the same density and seed
+ * always light the same pixels (see utils/random.ts). Transparent: unlit pixels keep what's underneath.
+ */
+export interface SparkleObject extends FrameObjectBase {
+    type: 'sparkle';
+    /** Share of lit pixels, 0–1. */
+    density: number;
+    seed: number;
+}
+
+export type FrameObject = ShapeObject | TextObject | BitmapObject | SparkleObject;
 export type FrameObjectType = FrameObject['type'];
 
 /** One still picture: objects drawn in order (later ones on top), shown for `duration` ms. */

@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { ShowGeneratorService } from './show-generator.service';
-import { TextObject, ShapeObject, BitmapObject } from '../interfaces/frame.interface';
+import { TextObject, ShapeObject, BitmapObject, SparkleObject, Frame } from '../interfaces/frame.interface';
+import { RenderService } from './render.service';
 import { GridService } from './grid.service';
 
 describe('ShowGeneratorService', () => {
@@ -84,20 +85,38 @@ describe('ShowGeneratorService', () => {
   });
 
   describe('sparkle', () => {
-    it('creates the requested number of transparent overlay frames with roughly the requested density', () => {
+    const render = () => TestBed.inject(RenderService);
+    const lit = (frame: Frame, size: { width: number; height: number }) =>
+      render().renderFrame(frame, size, () => undefined).pixels.flat().filter(p => p.active).length;
+
+    it('stores sparkles as a small recipe (one object, a new seed per frame)', () => {
       const frames = gen.sparkle({ width: 40, height: 25 }, { frames: 5, density: 0.1, seed: 42 });
       expect(frames.length).toBe(5);
-      const bitmap = frames[0].objects[0] as BitmapObject;
-      expect(bitmap.transparent).toBe(true);
-      const lit = bitmap.rows.join('').split('').filter(c => c === '1').length;
-      expect(lit).toBeGreaterThan(50); // ~100 of 1000
-      expect(lit).toBeLessThan(150);
+      const objects = frames.map(f => f.objects[0] as SparkleObject);
+      expect(objects.every(o => o.type === 'sparkle' && o.density === 0.1)).toBe(true);
+      expect(objects.map(o => o.seed)).toEqual([42, 43, 44, 45, 46]);
+      expect(new Set(objects.map(o => o.id)).size).toBe(1);
     });
 
-    it('is repeatable with the same seed', () => {
-      const a = gen.sparkle({ width: 10, height: 5 }, { frames: 2, seed: 7 }).map(f => (f.objects[0] as BitmapObject).rows);
-      const b = gen.sparkle({ width: 10, height: 5 }, { frames: 2, seed: 7 }).map(f => (f.objects[0] as BitmapObject).rows);
-      expect(a).toEqual(b);
+    it('lights roughly the requested share of pixels', () => {
+      const [frame] = gen.sparkle({ width: 40, height: 25 }, { frames: 1, density: 0.1, seed: 42 });
+      const count = lit(frame, { width: 40, height: 25 });
+      expect(count).toBeGreaterThan(50); // ~100 of 1000
+      expect(count).toBeLessThan(150);
+    });
+
+    it('draws the same lights for the same seed, and different ones for another', () => {
+      const size = { width: 20, height: 10 };
+      const draw = (seed: number) =>
+        render().renderFrame(gen.sparkle(size, { frames: 1, seed })[0], size, () => undefined).pixels.flat().map(p => (p.active ? 1 : 0)).join('');
+      expect(draw(7)).toBe(draw(7));
+      expect(draw(7)).not.toBe(draw(8));
+    });
+
+    it('keeps the background underneath', () => {
+      const bg: TextObject = { id: 'bg', type: 'text', text: 'I', position: { x: 0, y: 0 } };
+      const [frame] = gen.sparkle({ width: 3, height: 8 }, { frames: 1, density: 0, background: [bg] });
+      expect(lit(frame, { width: 3, height: 8 })).toBe(11); // just the I: 3 + 5 + 3 pixels
     });
   });
 

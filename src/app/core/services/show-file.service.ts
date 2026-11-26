@@ -211,7 +211,7 @@ function assertShow(value: unknown): asserts value is Show {
       if (!isObject(frame) || typeof frame['duration'] !== 'number' || !Array.isArray(frame['objects']))
         throw new InvalidFileError('files.invalidFrame', { name: String(value['name']) });
       for (const object of frame['objects'] as unknown[]) {
-        if (!isObject(object) || !['shape', 'text', 'bitmap'].includes(object['type'] as string) || !isObject(object['position']))
+        if (!isObject(object) || !['shape', 'text', 'bitmap', 'sparkle'].includes(object['type'] as string) || !isObject(object['position']))
           throw new InvalidFileError('files.unknownObject', { name: String(value['name']) });
       }
     }

@@ -121,7 +121,7 @@ describe('sharing', () => {
         break;
       }
     }
-    await page.waitForFunction(() => document.querySelector('app-share-dialog input.link')?.value.includes('/share#b1.'));
+    await page.waitForFunction(() => document.querySelector('app-share-dialog input.link')?.value.includes('/share#b2.'));
     const link = await page.$eval('app-share-dialog input.link', el => el.value);
     assert.match(await text(page, 'app-share-dialog'), /only runs on this computer/, 'warns that the app is local');
     await screenshot(page, 'share-dialog');
@@ -147,7 +147,7 @@ describe('sharing', () => {
   });
 
   it('explains a broken link instead of failing', async () => {
-    await go(page, '/share#b1.broken');
+    await go(page, '/share#b2.broken');
     await page.waitForSelector('app-share-view .empty-state');
     assert.match(await text(page, 'app-share-view .empty-state'), /broken or incomplete/);
   });

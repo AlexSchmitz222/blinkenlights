@@ -3,6 +3,7 @@ import { Grid, Size } from '../interfaces/grid.interface';
 import { Frame, FrameObject } from '../interfaces/frame.interface';
 import { Shape } from '../interfaces/shape.interface';
 import { DrawService } from './draw.service';
+import { seededRandom } from '../utils/random';
 import { GridService } from './grid.service';
 import { TextDrawService } from './text-draw.service';
 
@@ -46,6 +47,16 @@ export class RenderService {
       case 'text':
         this.text.drawText(grid, x, y, object.text, { font: object.font, spacing: object.spacing, inverted: object.inverted, clip: true });
         break;
+      case 'sparkle': {
+        // the same order of random numbers on every device: row by row over the whole grid
+        const random = seededRandom(object.seed);
+        for (let py = 0; py < grid.size.height; py++) {
+          for (let px = 0; px < grid.size.width; px++) {
+            if (random() < object.density) this.draw.drawPixel(grid, px, py, true);
+          }
+        }
+        break;
+      }
       case 'bitmap':
         object.rows.forEach((row, dy) => {
           for (let dx = 0; dx < row.length; dx++) {
@@ -73,6 +84,9 @@ export class RenderService {
       }
       case 'bitmap':
         return { x, y, ...object.size };
+      case 'sparkle':
+        // covers the whole grid; no area on purpose, so clicks on the stage reach the objects below
+        return { x: 0, y: 0, width: 0, height: 0 };
     }
   }
 }
