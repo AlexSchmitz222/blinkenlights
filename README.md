@@ -83,6 +83,17 @@ npm run test:ui    # UI tests in the real browser (Firefox), see below
 npm run build      # production build into dist/blinkenlights
 ```
 
+### Publishing on GitHub Pages
+
+`.github/workflows/pages.yml` builds the app, runs the unit tests and publishes it on every push to `main`. You can also start it by hand under *Actions*. The app then runs at **https://alexschmitz222.github.io/blinkenlights/**.
+
+One-time setup: in the repository open *Settings → Pages → Build and deployment* and set *Source* to **GitHub Actions**. For a private repository, GitHub Pages needs a paid plan.
+
+```bash
+npm run build:pages     # build for the /blinkenlights/ sub-path (+ 404.html for direct links)
+npm run test:ui:pages   # UI tests against that build, served like GitHub Pages serves it
+```
+
 ### UI tests
 
 `e2e/app.e2e.mjs` clicks through the app in the installed **Firefox** using `puppeteer-core` over WebDriver BiDi. No browser is downloaded. The tests run on Node's built-in test runner. They check the most important flows and fail if the browser console shows an error:

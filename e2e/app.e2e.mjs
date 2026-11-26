@@ -6,7 +6,7 @@ import { describe, it, before, after, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import {
-  startServer, launchBrowser, openPage, go, resetApp, setPreference, screenshot, text, sleep, existingDownloads, waitForDownload, waitForMenu,
+  startServer, launchBrowser, openPage, go, resetApp, setPreference, screenshot, text, sleep, existingDownloads, waitForDownload, waitForMenu, appPath, collectErrors,
 } from './support/harness.mjs';
 
 let stopServer;
@@ -30,9 +30,26 @@ beforeEach(async () => {
 });
 
 afterEach(async () => {
-  const found = [...errors];
+  const found = [...(await collectErrors(page))];
   await page?.close();
   assert.deepEqual(found, [], 'no console errors or uncaught exceptions');
+});
+
+describe('test harness', () => {
+  it('notices console errors and uncaught exceptions in the app', async () => {
+    await go(page, '/');
+    await page.evaluate(() => {
+      console.error('probe error');
+      setTimeout(() => {
+        throw new Error('probe exception');
+      });
+    });
+    await sleep(200);
+    const errors = await collectErrors(page);
+    assert.ok(errors.some(e => e.includes('probe error')), `console.error is recorded (${JSON.stringify(errors)})`);
+    assert.ok(errors.some(e => e.includes('probe exception')), 'uncaught exceptions are recorded');
+    errors.length = 0; // these were on purpose
+  });
 });
 
 describe('start page', () => {
@@ -340,7 +357,7 @@ describe('back buttons', () => {
 
   it('returns from a shape created in the show editor to the show editor, also after saving', async () => {
     await go(page, editorPath);
-    await page.click('.library a[href^="/shapes/new"]');
+    await page.click('.library a[href*="/shapes/new"]');
     await page.waitForSelector('app-shape-details .canvas .cell');
     assert.match(page.url(), /returnTo=%2Fshows%2Fshow_demo_welcome/);
 
@@ -352,7 +369,7 @@ describe('back buttons', () => {
     assert.match(page.url(), /\/shapes\/shape_.*returnTo=/, 'saving keeps the way back');
 
     await clickBack();
-    assert.equal(new URL(page.url()).pathname, editorPath);
+    assert.equal(appPath(page), editorPath);
   });
 
   it('returns from the player to the show editor that opened it', async () => {
@@ -364,11 +381,11 @@ describe('back buttons', () => {
       }
     }
     await waitForMenu(page);
-    await page.click('.mat-mdc-menu-panel a[href^="/play/"]');
+    await page.click('.mat-mdc-menu-panel a[href*="/play/"]');
     await page.waitForSelector('app-player .bar');
     await page.mouse.move(400, 830); // controls appear on pointer movement
     await clickBack();
-    assert.equal(new URL(page.url()).pathname, editorPath);
+    assert.equal(appPath(page), editorPath);
   });
 
   it('keeps unsaved show changes during a detour to the shape editor', async () => {
@@ -377,7 +394,7 @@ describe('back buttons', () => {
     await page.waitForSelector('.editor-bar .chip.unsaved');
     const objectsBefore = await page.$$eval('.layers .layer', els => els.length);
 
-    await page.click('.library a[href^="/shapes/new"]');
+    await page.click('.library a[href*="/shapes/new"]');
     await page.waitForSelector('app-shape-details .canvas .cell');
     assert.equal(await page.$('app-confirm-dialog'), null, 'no "discard changes?" question');
 
@@ -390,17 +407,17 @@ describe('back buttons', () => {
   it('returns from the player to the start page when opened via "continue"', async () => {
     await go(page, '/play/show_demo_berlin'); // remembers the last show for the start page
     await go(page, '/');
-    await page.click('.hero a[href^="/play/"]');
+    await page.click('.hero a[href*="/play/"]');
     await page.waitForSelector('app-player .bar');
     await page.mouse.move(400, 830);
     await clickBack();
-    assert.equal(new URL(page.url()).pathname, '/');
+    assert.equal(appPath(page), '/');
   });
 
   it('still returns to the lists without a return target', async () => {
     await go(page, '/shapes/star');
     await clickBack();
-    assert.equal(new URL(page.url()).pathname, '/shapes');
+    assert.equal(appPath(page), '/shapes');
   });
 });
 

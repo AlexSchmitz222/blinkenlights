@@ -22,7 +22,15 @@ export const DOWNLOADS = path.join(ROOT, 'e2e/downloads');
 const PROFILE = path.join(ROOT, 'e2e/.profile');
 const PORT = 4321;
 
-export const BASE = process.env.E2E_BASE_URL ?? `http://localhost:${PORT}`;
+export const BASE = (process.env.E2E_BASE_URL ?? `http://localhost:${PORT}`).replace(/\/$/, '');
+/** The sub-path the app is served from ('' locally, '/blinkenlights' for the GitHub Pages build). */
+export const BASE_PATH = new URL(BASE).pathname.replace(/\/$/, '');
+
+/** The current route inside the app, without the sub-path, e.g. '/shows/abc'. */
+export function appPath(page) {
+  const path = new URL(page.url()).pathname;
+  return (path.startsWith(BASE_PATH) ? path.slice(BASE_PATH.length) : path) || '/';
+}
 
 function findFirefox() {
   if (process.env.FIREFOX_BIN) return process.env.FIREFOX_BIN;
@@ -97,24 +105,46 @@ export async function launchBrowser() {
 }
 
 /**
- * Opens a page that records console errors and uncaught exceptions, so tests can assert there were none.
- * Errors passed to Angular's ErrorHandler are logged as objects; they are turned into readable text here.
+ * Opens a page that records the app's errors: console.error (also used by Angular's ErrorHandler),
+ * uncaught exceptions and unhandled promise rejections.
+ *
+ * The page records them itself (a script added to every document) and the tests read the list.
+ * Puppeteer's own `console`/`pageerror` events are not used: over WebDriver BiDi, Firefox also
+ * reports exceptions from Puppeteer's helper scripts there (e.g. while a page navigates), which
+ * would look like app errors.
  */
 export async function openPage(browser, viewport = { width: 1366, height: 860 }) {
   const page = await browser.newPage();
   await page.setViewport(viewport);
-  const errors = [];
-  page.on('console', async message => {
-    if (message.type() !== 'error') return;
-    const parts = await Promise.all(
-      message.args().map(arg =>
-        arg.evaluate(v => (v instanceof Error ? `${v.name}: ${v.message}` : String(v))).catch(() => message.text()),
-      ),
-    );
-    errors.push(parts.join(' '));
+  await page.evaluateOnNewDocument(() => {
+    const errors = [];
+    Object.defineProperty(window, '__e2eErrors', { value: errors });
+    const describe = value => (value instanceof Error ? `${value.name}: ${value.message}` : String(value));
+    const original = console.error.bind(console);
+    console.error = (...args) => {
+      errors.push(args.map(describe).join(' '));
+      original(...args);
+    };
+    window.addEventListener('error', event => errors.push(`uncaught: ${event.message}`));
+    window.addEventListener('unhandledrejection', event => errors.push(`unhandled rejection: ${describe(event.reason)}`));
   });
-  page.on('pageerror', error => errors.push(String(error)));
+  const errors = [];
+  pages.set(page, errors);
   return { page, errors };
+}
+
+const pages = new WeakMap();
+
+/**
+ * Moves the errors the current document recorded into the page's list. Call before the document is
+ * replaced (go() does) and before checking the list (the tests' afterEach does).
+ */
+export async function collectErrors(page) {
+  const errors = pages.get(page);
+  if (!errors) return [];
+  const found = await page.evaluate(() => (window.__e2eErrors ? window.__e2eErrors.splice(0) : [])).catch(() => []);
+  errors.push(...found);
+  return errors;
 }
 
 /**
@@ -125,6 +155,7 @@ export async function openPage(browser, viewport = { width: 1366, height: 860 })
  */
 export async function go(page, routeOrUrl) {
   const url = /^https?:/.test(routeOrUrl) ? routeOrUrl : BASE + routeOrUrl;
+  await collectErrors(page); // keep what the current document recorded before it is replaced
   await page.goto(url, { waitUntil: 'load' });
   // the routed page sits right after <router-outlet>; lazy pages need a moment to load their chunk
   await page.waitForFunction(() => !!document.querySelector('main router-outlet')?.nextElementSibling, { timeout: 15_000 });
