@@ -28,7 +28,7 @@ import { TranslatePipe } from '../../core/i18n/translate.pipe';
           <a matButton="filled" routerLink="/shows"><mat-icon svgIcon="movie-open-outline" />{{ 'nav.shows' | t }}</a>
           <a matButton="outlined" routerLink="/shapes"><mat-icon svgIcon="shape-outline" />{{ 'nav.shapes' | t }}</a>
           @if (lastShow(); as show) {
-            <a matButton [routerLink]="['/play', show.id]"><mat-icon svgIcon="play" />{{ 'start.continue' | t: { name: show.name } }}</a>
+            <a matButton [routerLink]="['/play', show.id]" [queryParams]="{ returnTo: '/' }"><mat-icon svgIcon="play" />{{ 'start.continue' | t: { name: show.name } }}</a>
           }
         </div>
       </div>

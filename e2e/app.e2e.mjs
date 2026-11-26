@@ -309,6 +309,32 @@ describe('back buttons', () => {
     assert.equal(new URL(page.url()).pathname, editorPath);
   });
 
+  it('keeps unsaved show changes during a detour to the shape editor', async () => {
+    await go(page, editorPath);
+    await page.click('.library .text-item'); // add a text object → unsaved
+    await page.waitForSelector('.editor-bar .chip.unsaved');
+    const objectsBefore = await page.$$eval('.layers .layer', els => els.length);
+
+    await page.click('.library a[href^="/shapes/new"]');
+    await page.waitForSelector('app-shape-details .canvas .cell');
+    assert.equal(await page.$('app-confirm-dialog'), null, 'no "discard changes?" question');
+
+    await clickBack();
+    await page.waitForSelector('app-show-editor .editor-bar');
+    assert.ok(await page.$('.editor-bar .chip.unsaved'), 'still unsaved after coming back');
+    assert.equal(await page.$$eval('.layers .layer', els => els.length), objectsBefore, 'the added text is still there');
+  });
+
+  it('returns from the player to the start page when opened via "continue"', async () => {
+    await go(page, '/play/show_demo_berlin'); // remembers the last show for the start page
+    await go(page, '/');
+    await page.click('.hero a[href^="/play/"]');
+    await page.waitForSelector('app-player .bar');
+    await page.mouse.move(400, 830);
+    await clickBack();
+    assert.equal(new URL(page.url()).pathname, '/');
+  });
+
   it('still returns to the lists without a return target', async () => {
     await go(page, '/shapes/star');
     await clickBack();

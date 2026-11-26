@@ -33,10 +33,25 @@ import { TranslatePipe } from '../../core/i18n/translate.pipe';
 import * as edit from '../../core/utils/show-edit';
 import { GifExportFlow } from '../show-list/gif-export.flow';
 import { ClipboardService } from '../../core/services/clipboard.service';
+import { DraftService } from '../../core/services/draft.service';
+import { safeReturnUrl } from '../../core/utils/return-to';
 
 interface HistoryEntry {
   show: Show;
   revision: number;
+}
+
+/** Everything needed to pick up editing where the user left off (see keepDraftFor). */
+interface EditorDraft {
+  show: Show;
+  past: HistoryEntry[];
+  future: HistoryEntry[];
+  revision: number;
+  savedRevision: number;
+  sceneIndex: number;
+  frameIndex: number;
+  selectedId: string | null;
+  selectedFrameIds: string[];
 }
 
 const HISTORY_LIMIT = 200;
@@ -70,6 +85,7 @@ export class ShowEditorComponent implements HasUnsavedChanges {
   private i18n = inject(I18nService);
   private gifExport = inject(GifExportFlow);
   readonly clipboard = inject(ClipboardService);
+  private drafts = inject(DraftService);
   readonly player = inject(PlayerService);
 
   /** Route parameter `/shows/:showId`. */
@@ -243,9 +259,54 @@ export class ShowEditorComponent implements HasUnsavedChanges {
     return this.dirty();
   }
 
+  /**
+   * Leaving for a page that comes back here (it carries ?returnTo=<this editor>): keep the unsaved
+   * state instead of asking to discard it. It is restored when the editor opens again.
+   */
+  keepDraftFor(nextUrl: string): boolean {
+    const show = this.show();
+    if (!show) return false;
+    const query = nextUrl.includes('?') ? nextUrl.slice(nextUrl.indexOf('?') + 1).split('#')[0] : '';
+    if (safeReturnUrl(new URLSearchParams(query).get('returnTo')) !== this.editorUrl()) return false;
+    this.drafts.keep<EditorDraft>(this.draftKey(show.id), {
+      show,
+      past: this.past(),
+      future: this.future(),
+      revision: this.revision(),
+      savedRevision: this.savedRevision(),
+      sceneIndex: this.sceneIndex(),
+      frameIndex: this.frameIndex(),
+      selectedId: this.selectedId(),
+      selectedFrameIds: [...this.selectedFrameIds()],
+    });
+    return true;
+  }
+
+  private draftKey(showId: string) {
+    return `show-editor:${showId}`;
+  }
+
   private load(id: string) {
     const stored = this.storage.getShow(id);
     this.player.load(null);
+    const draft = this.drafts.take<EditorDraft>(this.draftKey(id));
+    if (stored && draft) {
+      // back from a detour (shape editor, player): continue with the unsaved state
+      this.show.set(draft.show);
+      this.past.set(draft.past);
+      this.future.set(draft.future);
+      this.revision.set(draft.revision);
+      this.savedRevision.set(draft.savedRevision);
+      this.sceneIndex.set(draft.sceneIndex);
+      this.frameIndex.set(draft.frameIndex);
+      this.selectedFrameIds.set(new Set(draft.selectedFrameIds));
+      this.selectionAnchor = null;
+      this.lastCoalesceKey = null;
+      this.clampSelection();
+      this.selectedId.set(draft.selectedId);
+      if (!this.currentFrame()?.objects.some(o => o.id === draft.selectedId)) this.selectedId.set(null);
+      return;
+    }
     this.show.set(stored ? structuredClone(stored) : null);
     this.sceneIndex.set(0);
     this.frameIndex.set(0);

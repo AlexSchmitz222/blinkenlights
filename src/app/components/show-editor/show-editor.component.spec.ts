@@ -162,6 +162,50 @@ describe('ShowEditorComponent', () => {
     expect(document.querySelector('app-generator-dialog')).toBeNull();
   });
 
+  describe('drafts on detours', () => {
+    const reopen = () => {
+      fixture = TestBed.createComponent(ShowEditorComponent);
+      fixture.componentRef.setInput('showId', 'show_t');
+      editor = fixture.componentInstance;
+      fixture.detectChanges();
+    };
+
+    it('keeps unsaved changes when leaving for a page that returns here, and restores them', () => {
+      editor.selectFrame(0, 1);
+      editor.addText();
+      const objectId = editor.selectedId();
+      expect(editor.keepDraftFor('/shapes/new?returnTo=%2Fshows%2Fshow_t')).toBe(true);
+      fixture.destroy();
+
+      reopen();
+      expect(editor.hasUnsavedChanges()).toBe(true);
+      expect([editor.sceneIndex(), editor.frameIndex()]).toEqual([0, 1]);
+      expect(editor.selectedId()).toBe(objectId);
+      editor.undo(); // the history came back too
+      expect(editor.currentFrame()!.objects).toEqual([]);
+    });
+
+    it('does not keep anything for pages that do not return here', () => {
+      editor.addText();
+      expect(editor.keepDraftFor('/shapes/new')).toBe(false);
+      expect(editor.keepDraftFor('/shapes/new?returnTo=%2Fshows%2Fother')).toBe(false);
+      expect(editor.keepDraftFor('/shows')).toBe(false);
+      fixture.destroy();
+      reopen();
+      expect(editor.hasUnsavedChanges()).toBe(false);
+    });
+
+    it('restores a draft only once', () => {
+      editor.addText();
+      editor.keepDraftFor('/play/show_t?returnTo=%2Fshows%2Fshow_t');
+      fixture.destroy();
+      reopen();
+      fixture.destroy();
+      reopen();
+      expect(editor.hasUnsavedChanges()).toBe(false);
+    });
+  });
+
   describe('clipboard', () => {
     it('copies frames from one show and pastes them into another', () => {
       editor.selectScene(0); // f1, f2
