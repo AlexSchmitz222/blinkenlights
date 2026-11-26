@@ -160,6 +160,7 @@ export const de: Dictionary<typeof en> = {
     selectObjectFirst: 'Zuerst ein Objekt auswählen',
     shapes: 'Formen',
     newShape: 'Neue Form',
+    editShape: 'Diese Form bearbeiten',
     addShape: '{name} hinzufügen',
     noShapes: 'Noch keine Formen.',
     previewing: '● Vorschau',

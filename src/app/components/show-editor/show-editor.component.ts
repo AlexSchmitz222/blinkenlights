@@ -108,6 +108,9 @@ export class ShowEditorComponent implements HasUnsavedChanges {
       .map(shape => ({ shape, grid: this.shapeService.transformShapeToGrid(shape) })),
   );
 
+  /** This editor's own URL, passed as ?returnTo to pages opened from here. */
+  readonly editorUrl = computed(() => `/shows/${this.showId()}`);
+
   readonly currentScene = computed(() => this.show()?.scenes[this.sceneIndex()] ?? null);
   readonly currentFrame = computed(() => this.currentScene()?.frames[this.frameIndex()] ?? null);
   readonly selectedObject = computed(() => this.currentFrame()?.objects.find(o => o.id === this.selectedId()) ?? null);

@@ -25,7 +25,7 @@
         <mat-icon svgIcon="dots-vertical" />
       </button>
       <mat-menu #showMenu="matMenu" xPosition="before">
-        <a mat-menu-item [routerLink]="['/play', show.id]"><mat-icon svgIcon="fullscreen" />{{ 'editor.openInPlayer' | t }}</a>
+        <a mat-menu-item [routerLink]="['/play', show.id]" [queryParams]="{ returnTo: editorUrl() }"><mat-icon svgIcon="fullscreen" />{{ 'editor.openInPlayer' | t }}</a>
         <button mat-menu-item (click)="export()"><mat-icon svgIcon="download" />{{ 'editor.exportJson' | t }}</button>
         <button mat-menu-item (click)="exportGif()"><mat-icon svgIcon="file-gif-box" />{{ 'editor.exportGif' | t }}</button>
         <button mat-menu-item (click)="exportMovie('blm')"><mat-icon svgIcon="download" />{{ 'editor.exportBlm' | t }}</button>
@@ -65,7 +65,7 @@
         <section class="shapes">
           <div class="section-head">
             <h2 class="panel-title">{{ 'editor.shapes' | t }}</h2>
-            <a matIconButton routerLink="/shapes/new" [matTooltip]="'editor.newShape' | t" [attr.aria-label]="'editor.newShape' | t" class="icon-btn-sm">
+            <a matIconButton routerLink="/shapes/new" [queryParams]="{ returnTo: editorUrl() }" [matTooltip]="'editor.newShape' | t" [attr.aria-label]="'editor.newShape' | t" class="icon-btn-sm">
               <mat-icon svgIcon="plus" />
             </a>
           </div>
@@ -128,14 +128,24 @@
             </div>
 
             @if (object.type === 'shape') {
-              <mat-form-field appearance="outline" class="field" subscriptSizing="dynamic">
-                <mat-label>{{ 'editor.shape' | t }}</mat-label>
-                <mat-select [value]="object.shapeId" (selectionChange)="setShapeId($event.value)">
-                  @for (item of shapes(); track item.shape.id) {
-                    <mat-option [value]="item.shape.id">{{ item.shape.name }}</mat-option>
-                  }
-                </mat-select>
-              </mat-form-field>
+              <div class="shape-pick">
+                <mat-form-field appearance="outline" class="field" subscriptSizing="dynamic">
+                  <mat-label>{{ 'editor.shape' | t }}</mat-label>
+                  <mat-select [value]="object.shapeId" (selectionChange)="setShapeId($event.value)">
+                    @for (item of shapes(); track item.shape.id) {
+                      <mat-option [value]="item.shape.id">{{ item.shape.name }}</mat-option>
+                    }
+                  </mat-select>
+                </mat-form-field>
+                <a
+                  matIconButton
+                  [routerLink]="['/shapes', object.shapeId]"
+                  [queryParams]="{ returnTo: editorUrl() }"
+                  [matTooltip]="'editor.editShape' | t"
+                  [attr.aria-label]="'editor.editShape' | t">
+                  <mat-icon svgIcon="pencil" />
+                </a>
+              </div>
             }
             @if (asText(object); as textObject) {
               <label class="label">{{ 'editor.text' | t }}</label>

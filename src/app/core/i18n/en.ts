@@ -163,6 +163,7 @@ export const en = {
     selectObjectFirst: 'Select an object first',
     shapes: 'Shapes',
     newShape: 'New shape',
+    editShape: 'Edit this shape',
     addShape: 'Add {name}',
     noShapes: 'No shapes yet.',
     previewing: '● preview',

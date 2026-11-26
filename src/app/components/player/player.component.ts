@@ -10,6 +10,8 @@ import { RenderService } from '../../core/services/render.service';
 import { StorageService } from '../../core/services/storage.service';
 import { findPreset } from '../../core/interfaces/show.interface';
 import { readPreference, writePreference } from '../../core/utils/preferences';
+import { safeReturnUrl } from '../../core/utils/return-to';
+import { TranslationKey } from '../../core/i18n/i18n.service';
 import { I18nService } from '../../core/i18n/i18n.service';
 import { TranslatePipe } from '../../core/i18n/translate.pipe';
 
@@ -40,6 +42,11 @@ export class PlayerComponent {
 
   /** Route parameter `/play/:showId`. */
   readonly showId = input.required<string>();
+  /** Query parameter: where "back" leads, e.g. the show editor that opened the player. */
+  readonly returnTo = input<string>();
+
+  readonly backLink = computed(() => safeReturnUrl(this.returnTo()) ?? '/shows');
+  readonly backLabel = computed<TranslationKey>(() => (safeReturnUrl(this.returnTo()) ? 'common.back' : 'common.backToShows'));
 
   readonly show = computed(() => this.storage.getShow(this.showId()) ?? null);
   readonly viewMode = signal<ViewMode>(readPreference('playerView', VIEW_MODES, 'facade'));

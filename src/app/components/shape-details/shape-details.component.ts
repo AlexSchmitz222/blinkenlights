@@ -13,6 +13,7 @@ import { BasicDialogService } from '../../core/services/basic-dialog.service';
 import { HasUnsavedChanges } from '../../core/guards/unsaved-changes.guard';
 import { PixelGridComponent, PixelPointerEvent } from '../../shared/pixel-grid/pixel-grid.component';
 import { createId } from '../../core/utils/id';
+import { safeReturnUrl } from '../../core/utils/return-to';
 import { I18nService, TranslationKey } from '../../core/i18n/i18n.service';
 import { TranslatePipe } from '../../core/i18n/translate.pipe';
 import { shapeDeletionMessage } from '../shape-list/shape-deletion';
@@ -59,6 +60,11 @@ export class ShapeDetailsComponent implements HasUnsavedChanges {
 
   /** Route parameter (`/shapes/:shapeId`); 'new' creates a shape. */
   readonly shapeId = input.required<string>();
+  /** Query parameter: where "back" leads, e.g. the show editor that opened this shape. */
+  readonly returnTo = input<string>();
+
+  readonly backLink = computed(() => safeReturnUrl(this.returnTo()) ?? '/shapes');
+  readonly backLabel = computed<TranslationKey>(() => (safeReturnUrl(this.returnTo()) ? 'common.back' : 'common.backToShapes'));
 
   readonly maxSize = SHAPE_MAX_SIZE;
   readonly dimensions = ['width', 'height'] as const;
@@ -299,7 +305,8 @@ export class ShapeDetailsComponent implements HasUnsavedChanges {
     this.snackBar.open(this.i18n.t('common.saved', { name: toSave.name }), undefined, { duration: 2000 });
 
     if (this.isNew()) {
-      this.router.navigate(['/shapes', toSave.id], { replaceUrl: true });
+      // keep ?returnTo, so the back button still leads to where the user came from
+      this.router.navigate(['/shapes', toSave.id], { replaceUrl: true, queryParamsHandling: 'preserve' });
     }
   }
 
@@ -312,7 +319,7 @@ export class ShapeDetailsComponent implements HasUnsavedChanges {
         if (!ok) return;
         if (shape.id) this.storage.deleteShape(shape.id);
         this.savedSnapshot.set(JSON.stringify(shape)); // nothing left to lose
-        this.router.navigate(['/shapes']);
+        this.router.navigateByUrl(this.backLink());
       });
   }
 

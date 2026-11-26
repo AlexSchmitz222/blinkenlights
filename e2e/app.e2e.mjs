@@ -269,6 +269,53 @@ describe('show editor', () => {
   });
 });
 
+describe('back buttons', () => {
+  const editorPath = '/shows/show_demo_welcome';
+  const clickBack = async () => {
+    await page.click('a.mat-mdc-icon-button[href]:has(mat-icon[svgicon="arrow-left"])');
+    await sleep(500);
+  };
+
+  it('returns from a shape created in the show editor to the show editor, also after saving', async () => {
+    await go(page, editorPath);
+    await page.click('.library a[href^="/shapes/new"]');
+    await page.waitForSelector('app-shape-details .canvas .cell');
+    assert.match(page.url(), /returnTo=%2Fshows%2Fshow_demo_welcome/);
+
+    await (await page.$('.canvas .cell')).click(); // draw something
+    await page.keyboard.down('Control');
+    await page.keyboard.press('s');
+    await page.keyboard.up('Control');
+    await sleep(300);
+    assert.match(page.url(), /\/shapes\/shape_.*returnTo=/, 'saving keeps the way back');
+
+    await clickBack();
+    assert.equal(new URL(page.url()).pathname, editorPath);
+  });
+
+  it('returns from the player to the show editor that opened it', async () => {
+    await go(page, editorPath);
+    for (const button of await page.$$('.editor-bar button')) {
+      if ((await button.evaluate(el => el.querySelector('mat-icon')?.getAttribute('svgicon'))) === 'dots-vertical') {
+        await button.click();
+        break;
+      }
+    }
+    await page.waitForSelector('.mat-mdc-menu-panel');
+    await page.click('.mat-mdc-menu-panel a[href^="/play/"]');
+    await page.waitForSelector('app-player .bar');
+    await page.mouse.move(400, 830); // controls appear on pointer movement
+    await clickBack();
+    assert.equal(new URL(page.url()).pathname, editorPath);
+  });
+
+  it('still returns to the lists without a return target', async () => {
+    await go(page, '/shapes/star');
+    await clickBack();
+    assert.equal(new URL(page.url()).pathname, '/shapes');
+  });
+});
+
 describe('player', () => {
   it('plays the show and switches between house front and pixels', async () => {
     await go(page, '/play/show_demo_berlin');

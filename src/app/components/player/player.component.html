@@ -17,7 +17,7 @@
     </div>
 
     <div class="bar">
-      <a matIconButton routerLink="/shows" [matTooltip]="'common.backToShows' | t" [attr.aria-label]="'common.backToShows' | t">
+      <a matIconButton [routerLink]="backLink()" [matTooltip]="backLabel() | t" [attr.aria-label]="backLabel() | t">
         <mat-icon svgIcon="arrow-left" />
       </a>
 
@@ -82,6 +82,6 @@
 } @else {
   <div class="missing">
     <p>{{ 'common.notFoundShow' | t }}</p>
-    <a matButton="outlined" routerLink="/shows">{{ 'common.backToShows' | t }}</a>
+    <a matButton="outlined" [routerLink]="backLink()">{{ backLabel() | t }}</a>
   </div>
 }

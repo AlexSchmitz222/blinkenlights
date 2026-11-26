@@ -1,7 +1,7 @@
 @if (shape(); as shape) {
   <div class="editor">
     <header class="editor-bar">
-      <a matIconButton routerLink="/shapes" [matTooltip]="'common.backToShapes' | t" [attr.aria-label]="'common.backToShapes' | t">
+      <a matIconButton [routerLink]="backLink()" [matTooltip]="backLabel() | t" [attr.aria-label]="backLabel() | t">
         <mat-icon svgIcon="arrow-left" />
       </a>
       <h1>{{ shape.name || ('shapeEditor.untitled' | t) }}</h1>
@@ -146,7 +146,7 @@
   <div class="page">
     <div class="panel empty-state">
       <p>{{ 'common.notFoundShape' | t }}</p>
-      <a matButton="outlined" routerLink="/shapes">{{ 'common.backToShapes' | t }}</a>
+      <a matButton="outlined" [routerLink]="backLink()">{{ backLabel() | t }}</a>
     </div>
   </div>
 }
