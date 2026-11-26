@@ -41,6 +41,25 @@
       <span class="spacer"></span>
       <span class="preset">{{ presetName() }}</span>
 
+      <button
+        matButton
+        class="speed"
+        [class.active]="player.speed() !== 1"
+        [matMenuTriggerFor]="speedMenu"
+        [matTooltip]="'player.speed' | t"
+        [attr.aria-label]="'player.speed' | t">
+        {{ formatSpeed(player.speed()) }}
+      </button>
+      <mat-menu #speedMenu="matMenu" xPosition="before" yPosition="above">
+        @for (speed of speeds; track speed) {
+          <button mat-menu-item (click)="player.setSpeed(speed)">
+            <span>{{ formatSpeed(speed) }}</span>
+            @if (player.speed() === speed) {
+              <mat-icon svgIcon="check" class="menu-check" />
+            }
+          </button>
+        }
+      </mat-menu>
       <button matIconButton (click)="toggleLoop()" [class.active]="player.loop()" [matTooltip]="'player.loop' | t" [attr.aria-label]="'player.toggleLoop' | t">
         <mat-icon [svgIcon]="player.loop() ? 'repeat' : 'repeat-off'" />
       </button>

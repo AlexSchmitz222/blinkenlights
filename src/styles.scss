@@ -139,6 +139,13 @@ body {
   line-height: 0 !important;
 }
 
+// Check mark behind the active entry in choice menus (theme, language, speed). Menus render in an
+// overlay outside the components, so this has to be global.
+.menu-check {
+  margin-left: 16px !important;
+  margin-right: 0 !important;
+}
+
 // Compact icon buttons for dense panels (scene headers, panel titles).
 .icon-btn-sm {
   @include mat.icon-button-overrides((

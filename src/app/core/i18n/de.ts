@@ -132,6 +132,7 @@ export const de: Dictionary<typeof en> = {
     fullscreen: 'Vollbild (F)',
     exitFullscreen: 'Vollbild beenden (F)',
     toggleFullscreen: 'Vollbild umschalten',
+    speed: 'Geschwindigkeit (− / +)',
   },
   editor: {
     showName: 'Name der Show',

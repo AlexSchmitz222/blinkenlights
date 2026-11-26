@@ -13,6 +13,9 @@ export interface TimelineEntry {
 /** Frames shorter than this are stretched; browsers can't reliably time faster than this. */
 export const MIN_FRAME_DURATION = 20;
 
+/** Playback speeds offered in the player. */
+export const PLAYBACK_SPEEDS = [0.25, 0.5, 1, 1.5, 2] as const;
+
 /**
  * Plays a show frame by frame. Not a root service: provide it per component
  * (`providers: [PlayerService]`) so the player and an editor preview don't share state.
@@ -27,6 +30,8 @@ export class PlayerService {
   readonly playing = signal(false);
   /** Overrides `show.loop` when set. */
   readonly loopOverride = signal<boolean | null>(null);
+  /** 1 = as designed; 2 = twice as fast. Frame durations are divided by it. */
+  readonly speed = signal(1);
 
   readonly loop = computed(() => this.loopOverride() ?? this.show()?.loop ?? false);
 
@@ -115,6 +120,20 @@ export class PlayerService {
     if (this.playing()) this.schedule();
   }
 
+  setSpeed(speed: number) {
+    if (!(speed > 0)) return;
+    this.speed.set(speed);
+    if (this.playing()) this.schedule(); // apply to the current frame right away
+  }
+
+  /** Steps through PLAYBACK_SPEEDS (direction +1 = faster), stopping at the ends. */
+  changeSpeed(direction: 1 | -1) {
+    const speeds: readonly number[] = PLAYBACK_SPEEDS;
+    const index = speeds.indexOf(this.speed());
+    const next = index === -1 ? speeds.indexOf(1) : Math.min(speeds.length - 1, Math.max(0, index + direction));
+    this.setSpeed(speeds[next]);
+  }
+
   /** Jump to the first frame of a scene. */
   seekScene(sceneIndex: number) {
     const index = this.timeline().findIndex(e => e.sceneIndex === sceneIndex);
@@ -135,7 +154,7 @@ export class PlayerService {
       const moved = this.advance();
       if (moved) this.schedule();
       else this.playing.set(false);
-    }, Math.max(MIN_FRAME_DURATION, entry.frame.duration));
+    }, Math.max(MIN_FRAME_DURATION, entry.frame.duration / this.speed()));
   }
 
   /** Moves one frame forward. Returns false when the end was reached and the show doesn't loop. */

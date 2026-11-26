@@ -210,6 +210,12 @@ describe('player', () => {
     await page.keyboard.press('v');
     await sleep(100);
     assert.notEqual(await isFacade(), initial, 'V toggles the view');
+    await page.keyboard.press('+');
+    assert.match(await text(page, '.bar .speed'), /^1\.5×$/, '+ speeds up');
+    await page.keyboard.press('-');
+    await page.keyboard.press('-');
+    assert.match(await text(page, '.bar .speed'), /^0\.5×$/, '- slows down');
+
     await page.mouse.move(400, 820); // show the controls for the screenshot
     await screenshot(page, 'player');
   });

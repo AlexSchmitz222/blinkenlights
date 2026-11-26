@@ -4,7 +4,8 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { PixelGridComponent } from '../../shared/pixel-grid/pixel-grid.component';
-import { PlayerService } from '../../core/services/player.service';
+import { PLAYBACK_SPEEDS, PlayerService } from '../../core/services/player.service';
+import { MatMenuModule } from '@angular/material/menu';
 import { RenderService } from '../../core/services/render.service';
 import { StorageService } from '../../core/services/storage.service';
 import { findPreset } from '../../core/interfaces/show.interface';
@@ -17,7 +18,7 @@ type ViewMode = (typeof VIEW_MODES)[number];
 
 @Component({
   selector: 'app-player',
-  imports: [RouterLink, MatButtonModule, MatIconModule, MatTooltipModule, PixelGridComponent, TranslatePipe],
+  imports: [RouterLink, MatButtonModule, MatIconModule, MatMenuModule, MatTooltipModule, PixelGridComponent, TranslatePipe],
   providers: [PlayerService],
   templateUrl: './player.component.html',
   styleUrl: './player.component.scss',
@@ -47,6 +48,7 @@ export class PlayerComponent {
   readonly idle = signal(false);
   protected readonly document = document;
   protected readonly Math = Math;
+  readonly speeds = PLAYBACK_SPEEDS;
   private idleTimer: ReturnType<typeof setTimeout> | null = null;
 
   readonly grid = computed(() => {
@@ -62,7 +64,7 @@ export class PlayerComponent {
 
   /** Fade at most half a frame, so even fast animations reach full brightness. */
   readonly fade = computed(() => {
-    const duration = this.player.current()?.frame.duration ?? 0;
+    const duration = (this.player.current()?.frame.duration ?? 0) / this.player.speed();
     const max = this.viewMode() === 'facade' ? 180 : 120;
     return duration === 0 ? max : Math.min(max, Math.round(duration / 2));
   });
@@ -96,6 +98,11 @@ export class PlayerComponent {
     else this.host.nativeElement.requestFullscreen?.();
   }
 
+  /** "1×", "0,5×" (German) or "0.5×". */
+  formatSpeed(speed: number): string {
+    return `${this.i18n.number(speed, 2)}×`;
+  }
+
   toggleLoop() {
     this.player.loopOverride.set(!this.player.loop());
   }
@@ -116,6 +123,9 @@ export class PlayerComponent {
       'Home': () => this.player.stop(),
       'f': () => this.toggleFullscreen(),
       'l': () => this.toggleLoop(),
+      '-': () => this.player.changeSpeed(-1),
+      '+': () => this.player.changeSpeed(1),
+      '=': () => this.player.changeSpeed(1),
       'v': () => this.setViewMode(this.viewMode() === 'facade' ? 'pixel' : 'facade'),
     };
     const action = actions[event.key.length === 1 ? event.key.toLowerCase() : event.key];

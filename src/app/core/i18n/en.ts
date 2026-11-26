@@ -135,6 +135,7 @@ export const en = {
     fullscreen: 'Fullscreen (F)',
     exitFullscreen: 'Exit fullscreen (F)',
     toggleFullscreen: 'Toggle fullscreen',
+    speed: 'Speed (− / +)',
   },
   editor: {
     showName: 'Show name',

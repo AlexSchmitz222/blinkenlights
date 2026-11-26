@@ -118,4 +118,26 @@ describe('PlayerService', () => {
     expect(player.playing()).toBe(false);
     expect(player.current()).toBeNull();
   });
+
+  it('plays faster or slower with the speed setting', () => {
+    player.load(show(), { autoplay: true });
+    player.setSpeed(2);
+    vi.advanceTimersByTime(50);
+    expect(player.current()?.frame.id).toBe('b');
+    player.setSpeed(0.5);
+    vi.advanceTimersByTime(399);
+    expect(player.current()?.frame.id).toBe('b');
+    vi.advanceTimersByTime(1);
+    expect(player.current()?.frame.id).toBe('c');
+  });
+
+  it('steps through the offered speeds and stops at the ends', () => {
+    player.changeSpeed(1);
+    expect(player.speed()).toBe(1.5);
+    player.changeSpeed(1);
+    player.changeSpeed(1);
+    expect(player.speed()).toBe(2);
+    for (let i = 0; i < 6; i++) player.changeSpeed(-1);
+    expect(player.speed()).toBe(0.25);
+  });
 });
