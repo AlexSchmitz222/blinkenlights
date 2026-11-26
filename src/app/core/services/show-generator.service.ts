@@ -5,6 +5,8 @@ import { TextDrawService } from './text-draw.service';
 import { createId } from '../utils/id';
 
 export interface ScrollTextOptions {
+  /** Pixel font (default 'regular'). */
+  font?: 'regular' | 'small';
   /** Cap line of the text. Defaults to vertically centred. */
   y?: number;
   /** ms per one-pixel step. */
@@ -25,8 +27,8 @@ export class ShowGeneratorService {
 
   /** Text that enters on one side and fully leaves on the other, one pixel per frame. */
   scrollText(text: string, gridSize: Size, options: ScrollTextOptions = {}): Frame[] {
-    const width = this.text.measureText(text, { spacing: options.spacing }).width;
-    const y = options.y ?? Math.floor((gridSize.height - this.text.capHeight) / 2);
+    const width = this.text.measureText(text, { font: options.font, spacing: options.spacing }).width;
+    const y = options.y ?? Math.floor((gridSize.height - this.text.capHeightOf(options.font)) / 2);
     const stepDuration = options.stepDuration ?? 80;
     const objectId = createId('obj');
     const pad = options.inverted ? 1 : 0;
@@ -44,6 +46,7 @@ export class ShowGeneratorService {
         position: { x, y },
         spacing: options.spacing,
         inverted: options.inverted,
+        ...(options.font && options.font !== 'regular' ? { font: options.font } : {}),
       };
       frames.push({
         id: createId('frame'),

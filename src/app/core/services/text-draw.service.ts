@@ -4,9 +4,11 @@ import { Character } from '../interfaces/character.interface';
 import { Shape } from '../interfaces/shape.interface';
 import { DrawService } from './draw.service';
 import { GridService } from './grid.service';
-import { FALLBACK_GLYPH, FONT_CAP_HEIGHT, FONT_MAX_DESCENT, characters, glyphToCharacter } from '../../shapes/characters.shapes';
+import { FONTS, FontDefinition, FontId, glyphToCharacter } from '../../shapes/characters.shapes';
 
 export interface TextOptions {
+  /** Which pixel font. Default 'regular' (5×7); 'small' is 3×5 capitals. */
+  font?: FontId;
   /** Empty columns between characters. Default 1. */
   spacing?: number;
   /** Empty rows between lines (on top of the descender row). Default 1. */
@@ -17,6 +19,12 @@ export interface TextOptions {
   clip?: boolean;
 }
 
+interface LoadedFont {
+  definition: FontDefinition;
+  glyphs: Map<string, Character>;
+  fallback: Character;
+}
+
 /** Text is drawn with its top-left at (x, y), where y is the cap line of the first line of text. */
 @Injectable({
   providedIn: 'root'
@@ -25,27 +33,48 @@ export class TextDrawService {
   private draw = inject(DrawService);
   private gridService = inject(GridService);
 
-  private readonly glyphs = new Map(characters.map(c => [c.char, c]));
-  private readonly fallback = glyphToCharacter('�', FALLBACK_GLYPH);
+  private readonly fonts: Record<FontId, LoadedFont> = Object.fromEntries(
+    Object.values(FONTS).map(def => [
+      def.id,
+      {
+        definition: def,
+        glyphs: new Map(Object.entries(def.glyphs).map(([char, rows]) => [char, glyphToCharacter(char, rows, def.capHeight)])),
+        fallback: glyphToCharacter('�', def.fallback, def.capHeight),
+      },
+    ]),
+  ) as Record<FontId, LoadedFont>;
 
-  readonly capHeight = FONT_CAP_HEIGHT;
-  readonly lineHeight = FONT_CAP_HEIGHT + FONT_MAX_DESCENT;
+  /** Cap height of the regular font (kept for callers that don't care about fonts). */
+  readonly capHeight = FONTS.regular.capHeight;
+  readonly lineHeight = FONTS.regular.capHeight + FONTS.regular.maxDescent;
 
-  /** The glyph for a character, or a box for unknown characters. */
-  getCharacter(char: string): Character {
-    return this.glyphs.get(char) ?? this.fallback;
+  capHeightOf(font: FontId = 'regular'): number {
+    return FONTS[font].capHeight;
   }
 
-  hasCharacter(char: string): boolean {
-    return this.glyphs.has(char);
+  lineHeightOf(font: FontId = 'regular'): number {
+    return FONTS[font].capHeight + FONTS[font].maxDescent;
+  }
+
+  /** The glyph for a character, or a box for unknown characters. */
+  getCharacter(char: string, font: FontId = 'regular'): Character {
+    const loaded = this.fonts[font];
+    return loaded.glyphs.get(char)
+      ?? (loaded.definition.uppercaseOnly ? loaded.glyphs.get(char.toUpperCase()) : undefined)
+      ?? loaded.fallback;
+  }
+
+  hasCharacter(char: string, font: FontId = 'regular'): boolean {
+    const loaded = this.fonts[font];
+    return loaded.glyphs.has(char) || (loaded.definition.uppercaseOnly && loaded.glyphs.has(char.toUpperCase()));
   }
 
   /** Size the text occupies. Height includes the descender row so lines never overlap. */
   measureText(text: string, options: TextOptions = {}): Size {
     const lines = this.lines(text);
     const lineSpacing = options.lineSpacing ?? 1;
-    const width = Math.max(0, ...lines.map(line => this.measureLine(line, options.spacing ?? 1)));
-    const height = lines.length * this.lineHeight + (lines.length - 1) * lineSpacing;
+    const width = Math.max(0, ...lines.map(line => this.measureLine(line, options.spacing ?? 1, options.font)));
+    const height = lines.length * this.lineHeightOf(options.font) + (lines.length - 1) * lineSpacing;
     return { width, height };
   }
 
@@ -53,6 +82,7 @@ export class TextDrawService {
     const spacing = options.spacing ?? 1;
     const lineSpacing = options.lineSpacing ?? 1;
     const drawOptions = { clip: options.clip };
+    const lineHeight = this.lineHeightOf(options.font);
 
     if (options.inverted) {
       const size = this.measureText(text, options);
@@ -61,9 +91,9 @@ export class TextDrawService {
 
     this.lines(text).forEach((line, index) => {
       let cx = x;
-      const cy = y + index * (this.lineHeight + lineSpacing);
+      const cy = y + index * (lineHeight + lineSpacing);
       for (const char of line) {
-        const glyph = this.getCharacter(char);
+        const glyph = this.getCharacter(char, options.font);
         if (options.inverted) {
           for (const p of glyph.pattern) {
             this.draw.drawPixel(grid, cx + p.position.x, cy + p.position.y, false, drawOptions);
@@ -92,10 +122,10 @@ export class TextDrawService {
     };
   }
 
-  private measureLine(line: string, spacing: number): number {
+  private measureLine(line: string, spacing: number, font?: FontId): number {
     const chars = [...line];
     if (chars.length === 0) return 0;
-    return chars.reduce((sum, char) => sum + this.getCharacter(char).size.width, 0) + spacing * (chars.length - 1);
+    return chars.reduce((sum, char) => sum + this.getCharacter(char, font).size.width, 0) + spacing * (chars.length - 1);
   }
 
   private lines(text: string): string[] {

@@ -17,10 +17,10 @@ export interface GeneratorDialogData {
   /** For 'move': where the selected object currently is. */
   from?: Position;
   /** For 'scroll': default vertical position. */
-  defaultY?: number;
+  defaultY?: Record<'regular' | 'small', number>;
 }
 
-export interface ScrollConfig { kind: 'scroll'; text: string; stepDuration: number; y: number; direction: 'left' | 'right'; inverted: boolean }
+export interface ScrollConfig { kind: 'scroll'; text: string; stepDuration: number; y: number; direction: 'left' | 'right'; inverted: boolean; font: 'regular' | 'small' }
 export interface MoveConfig { kind: 'move'; to: Position; steps: number; stepDuration: number }
 export interface BlinkConfig { kind: 'blink'; times: number; onDuration: number; offDuration: number; mode: 'off' | 'invert' }
 export type GeneratorConfig = ScrollConfig | MoveConfig | BlinkConfig;
@@ -39,6 +39,13 @@ export type GeneratorConfig = ScrollConfig | MoveConfig | BlinkConfig;
             <mat-form-field appearance="outline" class="wide">
               <mat-label>{{ 'generator.text' | t }}</mat-label>
               <input matInput name="text" [(ngModel)]="scroll.text" required cdkFocusInitial />
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>{{ 'editor.font' | t }}</mat-label>
+              <mat-select name="font" [ngModel]="scroll.font" (ngModelChange)="setScrollFont($event)">
+                <mat-option value="regular">{{ 'editor.fontRegular' | t }}</mat-option>
+                <mat-option value="small">{{ 'editor.fontSmall' | t }}</mat-option>
+              </mat-select>
             </mat-form-field>
             <mat-form-field appearance="outline">
               <mat-label>{{ 'generator.msPerStep' | t }}</mat-label>
@@ -115,9 +122,15 @@ export class GeneratorDialogComponent {
   readonly data = inject<GeneratorDialogData>(MAT_DIALOG_DATA);
   private dialogRef = inject<MatDialogRef<GeneratorDialogComponent, GeneratorConfig>>(MatDialogRef);
 
-  readonly scroll: ScrollConfig = { kind: 'scroll', text: inject(I18nService).t('generator.defaultText'), stepDuration: 70, y: this.data.defaultY ?? 0, direction: 'left', inverted: false };
+  readonly scroll: ScrollConfig = { kind: 'scroll', text: inject(I18nService).t('generator.defaultText'), stepDuration: 70, y: this.data.defaultY?.regular ?? 0, direction: 'left', inverted: false, font: 'regular' };
   readonly move: MoveConfig = { kind: 'move', to: { x: (this.data.from?.x ?? 0) + 10, y: this.data.from?.y ?? 0 }, steps: 10, stepDuration: 80 };
   readonly blink: BlinkConfig = { kind: 'blink', times: 3, onDuration: 300, offDuration: 300, mode: 'off' };
+
+  /** Switching the font re-centres the text vertically (the fonts have different heights). */
+  setScrollFont(font: 'regular' | 'small') {
+    this.scroll.font = font;
+    this.scroll.y = this.data.defaultY?.[font] ?? this.scroll.y;
+  }
 
   get title(): TranslationKey {
     return (({ scroll: 'generator.scrollTitle', move: 'generator.moveTitle', blink: 'generator.blinkTitle' }) as const)[this.data.kind];

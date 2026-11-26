@@ -117,7 +117,95 @@ const GLYPHS: Record<string, string[]> = {
 /** Drawn for characters the font doesn't know. */
 export const FALLBACK_GLYPH: string[] = ['#####', '#...#', '#...#', '#...#', '#...#', '#...#', '#####'];
 
-export function glyphToCharacter(char: string, rows: string[]): Character {
+/**
+ * Small 3×5 font (capitals only; lowercase letters are drawn as capitals). Fits 4 characters on the
+ * original 18×8 grid instead of 3. Umlauts carry their dots in the top row.
+ */
+const SMALL_GLYPHS: Record<string, string[]> = {
+  'A': ['.#.', '#.#', '###', '#.#', '#.#'],
+  'B': ['##.', '#.#', '##.', '#.#', '##.'],
+  'C': ['.##', '#..', '#..', '#..', '.##'],
+  'D': ['##.', '#.#', '#.#', '#.#', '##.'],
+  'E': ['###', '#..', '##.', '#..', '###'],
+  'F': ['###', '#..', '##.', '#..', '#..'],
+  'G': ['.##', '#..', '#.#', '#.#', '.##'],
+  'H': ['#.#', '#.#', '###', '#.#', '#.#'],
+  'I': ['###', '.#.', '.#.', '.#.', '###'],
+  'J': ['..#', '..#', '..#', '#.#', '.#.'],
+  'K': ['#.#', '#.#', '##.', '#.#', '#.#'],
+  'L': ['#..', '#..', '#..', '#..', '###'],
+  'M': ['#.#', '###', '###', '#.#', '#.#'],
+  'N': ['#.#', '###', '###', '###', '#.#'],
+  'O': ['.#.', '#.#', '#.#', '#.#', '.#.'],
+  'P': ['##.', '#.#', '##.', '#..', '#..'],
+  'Q': ['.#.', '#.#', '#.#', '###', '.##'],
+  'R': ['##.', '#.#', '##.', '#.#', '#.#'],
+  'S': ['.##', '#..', '.#.', '..#', '##.'],
+  'T': ['###', '.#.', '.#.', '.#.', '.#.'],
+  'U': ['#.#', '#.#', '#.#', '#.#', '###'],
+  'V': ['#.#', '#.#', '#.#', '#.#', '.#.'],
+  'W': ['#.#', '#.#', '###', '###', '#.#'],
+  'X': ['#.#', '#.#', '.#.', '#.#', '#.#'],
+  'Y': ['#.#', '#.#', '.#.', '.#.', '.#.'],
+  'Z': ['###', '..#', '.#.', '#..', '###'],
+  'Ä': ['#.#', '.#.', '#.#', '###', '#.#'],
+  'Ö': ['#.#', '...', '###', '#.#', '###'],
+  'Ü': ['#.#', '...', '#.#', '#.#', '###'],
+  'ß': ['.#.', '#.#', '##.', '#.#', '##.'],
+  '0': ['###', '#.#', '#.#', '#.#', '###'],
+  '1': ['.#.', '##.', '.#.', '.#.', '###'],
+  '2': ['##.', '..#', '.#.', '#..', '###'],
+  '3': ['##.', '..#', '.#.', '..#', '##.'],
+  '4': ['#.#', '#.#', '###', '..#', '..#'],
+  '5': ['###', '#..', '##.', '..#', '##.'],
+  '6': ['.##', '#..', '###', '#.#', '###'],
+  '7': ['###', '..#', '.#.', '.#.', '.#.'],
+  '8': ['###', '#.#', '###', '#.#', '###'],
+  '9': ['###', '#.#', '###', '..#', '##.'],
+  ' ': ['..', '..', '..', '..', '..'],
+  '.': ['.', '.', '.', '.', '#'],
+  ',': ['.', '.', '.', '#', '#'],
+  ':': ['.', '#', '.', '#', '.'],
+  ';': ['.', '#', '.', '#', '#'],
+  '!': ['#', '#', '#', '.', '#'],
+  '?': ['##.', '..#', '.#.', '...', '.#.'],
+  "'": ['#', '#', '.', '.', '.'],
+  '"': ['#.#', '#.#', '...', '...', '...'],
+  '-': ['...', '...', '###', '...', '...'],
+  '+': ['...', '.#.', '###', '.#.', '...'],
+  '=': ['...', '###', '...', '###', '...'],
+  '(': ['.#', '#.', '#.', '#.', '.#'],
+  ')': ['#.', '.#', '.#', '.#', '#.'],
+  '/': ['..#', '..#', '.#.', '#..', '#..'],
+  '*': ['...', '#.#', '.#.', '#.#', '...'],
+  '#': ['#.#', '###', '#.#', '###', '#.#'],
+  '%': ['#.#', '..#', '.#.', '#..', '#.#'],
+  '&': ['.#.', '#.#', '.#.', '#.#', '.##'],
+  '<': ['..#', '.#.', '#..', '.#.', '..#'],
+  '>': ['#..', '.#.', '..#', '.#.', '#..'],
+  '♥': ['.#.#.', '#####', '#####', '.###.', '..#..'],
+};
+
+export type FontId = 'regular' | 'small';
+
+export interface FontDefinition {
+  id: FontId;
+  /** Height of capitals. Row capHeight - 1 is the baseline. */
+  capHeight: number;
+  /** Rows below the baseline (descenders). */
+  maxDescent: number;
+  glyphs: Record<string, string[]>;
+  fallback: string[];
+  /** Lowercase letters fall back to their capitals. */
+  uppercaseOnly: boolean;
+}
+
+export const FONTS: Record<FontId, FontDefinition> = {
+  regular: { id: 'regular', capHeight: FONT_CAP_HEIGHT, maxDescent: FONT_MAX_DESCENT, glyphs: GLYPHS, fallback: FALLBACK_GLYPH, uppercaseOnly: false },
+  small: { id: 'small', capHeight: 5, maxDescent: 0, glyphs: SMALL_GLYPHS, fallback: ['###', '###', '###', '###', '###'], uppercaseOnly: true },
+};
+
+export function glyphToCharacter(char: string, rows: string[], capHeight = FONT_CAP_HEIGHT): Character {
   const width = Math.max(...rows.map(r => r.length));
   const pattern = rows.flatMap((row, y) =>
     [...row].flatMap((cell, x) => (cell === '#' ? [{ position: { x, y }, active: true }] : [])),
@@ -130,7 +218,7 @@ export function glyphToCharacter(char: string, rows: string[]): Character {
     size: { width, height: rows.length },
     pattern,
     inverted: false,
-    heightOffset: Math.max(0, rows.length - FONT_CAP_HEIGHT),
+    heightOffset: Math.max(0, rows.length - capHeight),
   };
 }
 

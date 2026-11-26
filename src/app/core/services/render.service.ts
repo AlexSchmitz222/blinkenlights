@@ -44,7 +44,7 @@ export class RenderService {
         break;
       }
       case 'text':
-        this.text.drawText(grid, x, y, object.text, { spacing: object.spacing, inverted: object.inverted, clip: true });
+        this.text.drawText(grid, x, y, object.text, { font: object.font, spacing: object.spacing, inverted: object.inverted, clip: true });
         break;
       case 'bitmap':
         object.rows.forEach((row, dy) => {
@@ -66,7 +66,7 @@ export class RenderService {
         return { x, y, ...size };
       }
       case 'text': {
-        const size = this.text.measureText(object.text, { spacing: object.spacing });
+        const size = this.text.measureText(object.text, { font: object.font, spacing: object.spacing });
         const pad = object.inverted ? 1 : 0;
         return { x: x - pad, y: y - pad, width: Math.max(1, size.width) + 2 * pad, height: size.height + 2 * pad };
       }

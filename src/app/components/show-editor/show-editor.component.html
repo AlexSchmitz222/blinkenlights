@@ -137,6 +137,13 @@
             @if (asText(object); as textObject) {
               <label class="label">{{ 'editor.text' | t }}</label>
               <textarea class="input" rows="2" [value]="textObject.text" (input)="setText($any($event.target).value)"></textarea>
+              <mat-form-field appearance="outline" class="field" subscriptSizing="dynamic">
+                <mat-label>{{ 'editor.font' | t }}</mat-label>
+                <mat-select [value]="textObject.font ?? 'regular'" (selectionChange)="setFont($event.value)">
+                  <mat-option value="regular">{{ 'editor.fontRegular' | t }}</mat-option>
+                  <mat-option value="small">{{ 'editor.fontSmall' | t }}</mat-option>
+                </mat-select>
+              </mat-form-field>
               <label class="row">
                 <span>{{ 'editor.letterSpacing' | t }}</span>
                 <input class="input num" type="number" min="0" max="10" [value]="textObject.spacing ?? 1" (change)="setSpacing(+$any($event.target).value)" />

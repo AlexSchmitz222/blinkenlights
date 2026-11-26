@@ -53,4 +53,12 @@ describe('ShowGeneratorService', () => {
     expect(inverted[1].objects[0].inverted).toBe(true);
     expect(inverted[1].duration).toBe(200);
   });
+
+  it('scrolls small text, centred for its height', () => {
+    const frames = gen.scrollText('HI', { width: 18, height: 8 }, { font: 'small' });
+    const first = frames[0].objects[0] as TextObject;
+    expect(first.font).toBe('small');
+    expect(first.position.y).toBe(1); // (8 - 5) / 2
+    expect(frames.length).toBe(18 + 7 + 1); // HI is 7 px wide in the small font
+  });
 });

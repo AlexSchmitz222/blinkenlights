@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { TextDrawService } from './text-draw.service';
 import { GridService } from './grid.service';
-import { FONT_CAP_HEIGHT, FONT_GLYPHS } from '../../shapes/characters.shapes';
+import { FONT_CAP_HEIGHT, FONT_GLYPHS, FONTS } from '../../shapes/characters.shapes';
 import { Grid } from '../interfaces/grid.interface';
 
 function ascii(grid: Grid): string[] {
@@ -94,5 +94,37 @@ describe('TextDrawService', () => {
     const shape = text.textToShape('A');
     expect(shape.size).toEqual({ width: 5, height: 8 });
     expect(shape.pattern.length).toBe(18);
+  });
+
+  describe('small font (3×5)', () => {
+    for (const [char, rows] of Object.entries(FONTS.small.glyphs)) {
+      it(`glyph "${char}" is well-formed`, () => {
+        expect(rows.length, 'height').toBe(5);
+        expect(new Set(rows.map(r => r.length)).size, 'all rows same width').toBe(1);
+        expect(rows.join('')).toMatch(/^[#.]+$/);
+      });
+    }
+
+    it('covers capitals, digits, umlauts and common punctuation; lowercase uses the capitals', () => {
+      const required = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789ÄÖÜäöüß .,:;!?-+=()/\'"';
+      expect([...required].filter(c => !text.hasCharacter(c, 'small'))).toEqual([]);
+      expect(text.getCharacter('a', 'small')).toBe(text.getCharacter('A', 'small'));
+    });
+
+    it('fits four characters on the original 18×8 grid (one more than the regular font)', () => {
+      expect(text.measureText('HALL', { font: 'small' })).toEqual({ width: 15, height: 5 });
+      expect(text.measureText('HALLO', { font: 'small' }).width).toBeGreaterThan(18);
+      expect(text.measureText('HAL').width).toBeLessThanOrEqual(18);
+      expect(text.measureText('HALL').width).toBeGreaterThan(18);
+    });
+
+    it('draws small text and stacks lines 5 + 1 rows apart', () => {
+      const grid = grids.generateEmptyGrid('g', { width: 3, height: 11 });
+      text.drawText(grid, 0, 0, 'T\nL', { font: 'small' });
+      expect(ascii(grid)[0]).toBe('###');
+      expect(ascii(grid)[10]).toBe('###'); // bottom of the L in line 2
+      expect(text.capHeightOf('small')).toBe(5);
+      expect(text.lineHeightOf('small')).toBe(5);
+    });
   });
 });

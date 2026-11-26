@@ -20,6 +20,8 @@ export interface TextObject extends FrameObjectBase {
     text: string;
     /** Columns between letters (default 1). */
     spacing?: number;
+    /** Pixel font; default 'regular' (5×7), 'small' is 3×5 capitals. */
+    font?: 'regular' | 'small';
 }
 
 /**

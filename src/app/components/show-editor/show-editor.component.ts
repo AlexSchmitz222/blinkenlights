@@ -527,6 +527,10 @@ export class ShowEditorComponent implements HasUnsavedChanges {
     this.updateSelected(o => (o.type === 'text' ? { ...o, text: value } : o), `text:${this.selectedId()}`);
   }
 
+  setFont(font: 'regular' | 'small') {
+    this.updateSelected(o => (o.type === 'text' ? { ...o, font: font === 'regular' ? undefined : font } : o));
+  }
+
   setSpacing(value: number) {
     if (!Number.isFinite(value)) return;
     this.updateSelected(o => (o.type === 'text' ? { ...o, spacing: Math.max(0, Math.round(value)) } : o), `spacing:${this.selectedId()}`);
@@ -838,7 +842,10 @@ export class ShowEditorComponent implements HasUnsavedChanges {
     const data: GeneratorDialogData = {
       kind,
       from: this.selectedObject()?.position,
-      defaultY: Math.floor((show.size.height - this.text.capHeight) / 2),
+      defaultY: {
+        regular: Math.floor((show.size.height - this.text.capHeightOf('regular')) / 2),
+        small: Math.floor((show.size.height - this.text.capHeightOf('small')) / 2),
+      },
     };
     this.dialog
       .open<GeneratorDialogComponent, GeneratorDialogData, GeneratorConfig>(GeneratorDialogComponent, { data, width: '480px', maxWidth: '94vw' })
